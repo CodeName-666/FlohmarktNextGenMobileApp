@@ -3,6 +3,9 @@ import '../data/checkout_store.dart';
 import '../domain/models.dart';
 import '../domain/money.dart';
 import 'messages.dart';
+import 'package:printing/printing.dart';
+import '../services/catalog_reports.dart';
+import '../domain/catalog_search.dart';
 
 class ReceiptPage extends StatefulWidget {
   final CheckoutStore store;
@@ -23,6 +26,11 @@ class _ReceiptPageState extends State<ReceiptPage> {
   }
 
   Future<void> _reload() async {
+    if (mounted) {
+      setState(() {
+        _busy = true;
+      });
+    }
     try {
       final receipts = await widget.store.receipts();
       final events = await widget.store.events();
@@ -73,6 +81,51 @@ class _ReceiptPageState extends State<ReceiptPage> {
     await _reload();
   }
 
+  Future<void> _print(Receipt receipt) async {
+    try {
+      final bytes = await buildReceiptPdf(
+        widget.store.session,
+        receipt,
+        _events,
+      );
+      if (!mounted) return;
+      final action = await showModalBottomSheet<String>(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                title: const Text('Systemdruck / Vorschau'),
+                onTap: () => Navigator.pop(context, 'print'),
+              ),
+              ListTile(
+                title: const Text('PDF teilen'),
+                onTap: () => Navigator.pop(context, 'share'),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (action == 'print') {
+        await Printing.layoutPdf(
+          name: 'Beleg-${receipt.number}.pdf',
+          onLayout: (_) async => bytes,
+        );
+      } else if (action == 'share') {
+        await Printing.sharePdf(
+          bytes: bytes,
+          filename: 'Beleg-${receipt.number}.pdf',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(
+          () => _error = 'Beleg bleibt gespeichert. Druck fehlgeschlagen: $e',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cancelled = _events
@@ -82,7 +135,21 @@ class _ReceiptPageState extends State<ReceiptPage> {
     return PopScope(
       canPop: !_busy,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Belege · Demo')),
+        appBar: AppBar(
+          title: Text('Belege · ${widget.store.session.name}'),
+          actions: [
+            IconButton(
+              tooltip: 'Aktualisieren',
+              onPressed: _busy
+                  ? null
+                  : () {
+                      setState(() => _error = null);
+                      _reload();
+                    },
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
+        ),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(20),
@@ -107,31 +174,42 @@ class _ReceiptPageState extends State<ReceiptPage> {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         Text(
-                          'Kasse 1 · ${DateTime.parse(receipt.occurredAt).toLocal().toString().substring(0, 16)}',
+                          'Kasse ${receipt.registerNumber} · ${localEventTime(receipt.occurredAt)}',
                         ),
                         Text(
-                          'Gegeben ${formatCents(receipt.tenderedCents)} · Rückgeld ${formatCents(receipt.changeCents)}',
+                          receipt.tenderedKnown
+                              ? 'Gegeben ${formatCents(receipt.tenderedCents)} · Rückgeld ${formatCents(receipt.changeCents)}'
+                              : 'Bargeldübergabe bestätigt · Betrag nicht erfasst',
                         ),
-                        for (final sale in _events.where(
-                          (e) =>
-                              e.receiptId == receipt.id && e.cancelOf == null,
-                        ))
+                        SelectableText('Vorgang: ${receipt.id}'),
+                        for (final event in receiptHistory(receipt, _events))
                           ListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text(sale.listing.title),
+                            title: Text(event.listing.title),
                             subtitle: Text(
-                              '${formatCents(sale.listing.priceCents)} · ${cancelled.contains(sale.id) ? 'Storniert' : 'Verkauft'}',
+                              '${formatCents(event.cancelOf == null ? event.listing.priceCents : -event.listing.priceCents)} · ${event.cancelOf != null
+                                  ? 'Storno / Rückgabe'
+                                  : cancelled.contains(event.id)
+                                  ? 'Verkauf storniert'
+                                  : 'Verkauft'}\n${event.listing.sellerKey} · Box ${event.listing.boxNumber} · Artikel ${event.listing.articleNumber}\n${localEventTime(event.occurredAt)} · ${event.id}${event.cancelOf == null ? '' : '\nOriginal: ${event.cancelOf}'}',
                             ),
-                            trailing: cancelled.contains(sale.id)
+                            trailing:
+                                event.cancelOf != null ||
+                                    cancelled.contains(event.id)
                                 ? const Icon(Icons.undo)
                                 : IconButton(
                                     tooltip: 'Position stornieren',
                                     onPressed: _busy
                                         ? null
-                                        : () => _cancel(sale),
+                                        : () => _cancel(event),
                                     icon: const Icon(Icons.undo),
                                   ),
                           ),
+                        OutlinedButton.icon(
+                          onPressed: _busy ? null : () => _print(receipt),
+                          icon: const Icon(Icons.print_outlined),
+                          label: const Text('Bon erneut drucken / teilen'),
+                        ),
                       ],
                     ),
                   ),

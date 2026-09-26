@@ -55,8 +55,14 @@ Dart-Unterstützung der installierten Version überprüfen. Nicht erfasste Dart-
 Symbole transparent benennen; Dateiknoten sind kein vollständiger Aufrufgraph.
 Bei Ausfall begrenzt diagnostizieren und mit Quelltextanalyse/Tests fortfahren.
 
-## Aktueller Lieferumfang
+## Verbindliches Ziel: vollständiger Port
 
-Erste Ausbaustufe ist ein lokal persistenter Demo-Kassenablauf für Hardwaretests.
-Produktiver Marktimport, Login, Synchronisation, Druck und Auszahlung folgen
-dem kanonischen Umsetzungsplan im Second Brain. Nicht als produktionsbereit ausgeben.
+Seit dem Folgeauftrag vom 26.09.2026 ALLE Features aus FlohmarktNextGenApp auf
+Android/iOS übertragen. Die frühere Demo-Beschränkung und der Ausschluss von
+Verwaltung, Abrechnung, Konsolidierung oder Rücksortierung sind aufgehoben.
+`docs/feature-parity.md` verfolgt jedes Desktop-Feature samt Quelle und Abnahme.
+Bestehende PyQt-Dateien nur lesen; dortige parallele Änderungen nicht anfassen.
+Mobile Betriebssystemgrenzen durch funktionale mobile Entsprechungen abdecken
+(z. B. Dateiauswahl/Teilen, PDF/Systemdruck statt Windows-Spooler).
+Erst dann als vollständig bezeichnen, wenn die Featurematrix und Prüfungen das
+belegen. Offene Hardware-/Signierungsprüfungen getrennt von Implementierung nennen.

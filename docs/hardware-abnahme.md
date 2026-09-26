@@ -1,6 +1,10 @@
 # Hardware-Abnahme vor dem Pilot
 
 Status: offen. Keine Scanner-/Smartphone-Kombination ist bisher freigegeben.
+Softwareprüfung 26.09.2026: Android-Debug-APK lokal gebaut, 106 automatisierte
+Tests erfolgreich, Analyse/Formatierung fehlerfrei. `adb devices` meldet kein
+angeschlossenes Gerät. iOS-Build und Signierung sind auf diesem Windows-Host
+nicht geprüft. Diese Nachweise ersetzen keine der folgenden Geräteprüfungen.
 Kanonische Architektur/Planung: Obsidian → MarketMate → Flohmarkt NextGen Mobile App.
 Diese Checkliste gehört zur ausführbaren Software und hält konkrete Prüfresultate fest.
 

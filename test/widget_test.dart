@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flohmarkt_mobile/data/checkout_store.dart';
 import 'package:flohmarkt_mobile/data/demo_catalog.dart';
-import 'package:flohmarkt_mobile/main.dart';
+import 'package:flohmarkt_mobile/ui/register_page.dart';
 
 Future<void> settleDatabase(WidgetTester tester) async {
   // FFI runs in a real isolate. Yield real time before waiting for animations.
@@ -28,7 +28,7 @@ void main() {
         factory: databaseFactoryFfi,
         path: inMemoryDatabasePath,
       );
-      await tester.pumpWidget(MarketMateApp(store: store));
+      await tester.pumpWidget(MaterialApp(home: RegisterPage(store: store)));
       await settleDatabase(tester);
       final input = find.byKey(const Key('scan-input'));
       await tester.enterText(input, demoPayload);
@@ -58,7 +58,7 @@ void main() {
         factory: databaseFactoryFfi,
         path: inMemoryDatabasePath,
       );
-      await tester.pumpWidget(MarketMateApp(store: store));
+      await tester.pumpWidget(MaterialApp(home: RegisterPage(store: store)));
       await settleDatabase(tester);
       expect(find.text('Demo · Keine echten Verkäufe'), findsOneWidget);
       await tester.enterText(find.byKey(const Key('scan-input')), demoPayload);
