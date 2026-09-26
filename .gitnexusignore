@@ -1,0 +1,5 @@
+.tooling/
+.dart_tool/
+build/
+ios/Pods/
+.superpowers/
