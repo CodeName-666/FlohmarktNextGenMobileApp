@@ -9,12 +9,12 @@ unveränderte Referenz. Die vorhandenen uncommitteten Arbeiten werden mitgenomme
 
 - [x] Bestand, Worktrees, SDKs, Pfadabhängigkeiten und Desktop-Publishvertrag prüfen.
 - [x] Flutter-Quellen einschließlich nativer Projekte nach `app/` verschieben.
-- [ ] Externe SDKs auf C: prüfen, lokale Befehle und Dokumentation aktualisieren.
-- [ ] Master-CI, getrennte mobile Artefakte, Signierung und Serververtrag vorbereiten.
-- [ ] Unbegrenzt parkbare Vorgänge mit Migration und Reservierungsprüfung umsetzen.
-- [ ] Vorhandenes Redesign vereinheitlichen, alle Port-Funktionen erreichbar halten.
-- [ ] Nach zusammenhängender Umsetzung Format, Analyse, Tests und Android-Build prüfen.
-- [ ] Funktionsmatrix, Prüfbericht und kanonisches Projektwissen aktualisieren.
+- [x] Externe SDKs auf C: prüfen, lokale Befehle und Dokumentation aktualisieren.
+- [x] Master-CI, getrennte mobile Artefakte, Signierung und Serververtrag vorbereiten.
+- [x] Unbegrenzt parkbare Vorgänge mit Migration und Reservierungsprüfung umsetzen.
+- [x] Vorhandenes Redesign vereinheitlichen, alle Port-Funktionen erreichbar halten.
+- [x] Nach zusammenhängender Umsetzung Format, Analyse, Tests und Android-Build prüfen.
+- [x] Funktionsmatrix, Prüfbericht und kanonisches Projektwissen aktualisieren.
 
 Flutter-interne Zwischendateien bleiben in `app/build/`, damit Plugins und Xcode
 Standardpfade verwenden. `build/android/` und `build/ios/` enthalten gesammelte
