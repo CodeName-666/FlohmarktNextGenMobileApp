@@ -1,7 +1,7 @@
 # Flohmarkt NextGen Mobile App
 
 Mobile Kassensoftware der MarketMate-Plattform, Android und iOS mit Flutter/Dart.
-Desktop-Referenz: `../FlohmarktNextGenApp`. Diese bleibt im Parallelbetrieb.
+Desktop-Referenz: `D:/Projekte/WebDevelopment/FlohmarktNextGenApp`. Diese bleibt im Parallelbetrieb.
 
 <!-- OBSIDIAN-SECOND-BRAIN:START -->
 ## Obsidian Second Brain
@@ -25,7 +25,12 @@ keine Kopien langer Konzepte im Repo. AGENTS.md und CLAUDE.md identisch halten.
 
 ## Entwicklungsregeln
 
-- Fachlogik in `lib/domain/`, SQLite in `lib/data/`, Eingabe und UI in `lib/ui/`.
+- Flutter-Projekt unter `app/` inklusive nativer Quellen `app/android/` und `app/ios/`.
+- SDKs außerhalb des Repos; Windows-Standard `C:/Users/NoName/Development/SDKs/`.
+- `app/build/` sind Flutter-Zwischendateien; `build/android/` und `build/ios/`
+  sind gesammelte Artefakte. Keine generierten Ausgaben versionieren.
+
+- Fachlogik in `app/lib/domain/`, SQLite in `app/lib/data/`, Eingabe und UI in `app/lib/ui/`.
 - Geld ausschließlich als Integer-Cent. Kein double für Geldberechnungen.
 - Markt, Kasse, Exportgeneration, Listing und akzeptierte Etikettenrevision binden.
 - V2-Scans: MM1-Payload mit CRC32 und Luhn validieren; revisionslose Scans ablehnen.
@@ -40,7 +45,7 @@ keine Kopien langer Konzepte im Repo. AGENTS.md und CLAUDE.md identisch halten.
 - Kamera nur im Scanbildschirm, Berechtigungsfehler sichtbar und manuelle Eingabe
   weiter verfügbar. HID-Eingaben nur am vorgesehenen Feld, Abschluss per Enter.
 - Kein produktiver Upload, Release oder Hardwareversprechen ohne entsprechende Prüfung.
-- Prüfen: `dart format --output=none --set-exit-if-changed lib test`,
+- Prüfen im Verzeichnis `app/`: `dart format --output=none --set-exit-if-changed lib test`,
   `flutter analyze`, `flutter test`. Native Builds separat prüfen.
 
 ## GitNexus

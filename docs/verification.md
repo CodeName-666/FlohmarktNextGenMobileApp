@@ -1,5 +1,24 @@
 # Prüfung des vollständigen Funktionsports
 
+## Umstrukturierung und Redesign · 02.10.2026
+
+- Flutter 3.44.9 / Dart 3.12.2 aus `C:/Users/NoName/Development/SDKs/flutter`.
+- Format: 61 Dateien ohne Abweichung; `flutter analyze`: keine Befunde.
+- Gesamtsuite: 121 Tests bestanden. Anschließende HID-Absicherung gezielt geprüft:
+  5 Scanner-Sicherheitstests bestanden, inklusive neuer Inaktivitätsregression.
+- 13 App-Bereiche hell/dunkel bei 320 Pixeln und Schriftfaktor 1,8 geprüft.
+- Android-Debug-Build mit C:-SDK erfolgreich; endgültiges Paket nach Übernahme
+  im Hauptordner frisch bauen und auf enthaltene Flutter-Laufzeitdateien prüfen.
+- iOS-/Release-Runner, Signierung, reale Hardware und produktive Serverfreigabe offen.
+
+Der erste Desktop-SDK-Migrationsbuild lieferte einen nativen Kompiliernachweis.
+Ein danach verschobener Flutter-Buildcache erzeugte bei einem inkrementellen
+Build ein Paket ohne Dart-Laufzeitassets trotz Exitcode 0; dieses Paket wird
+nicht verteilt. Die Artefaktskripte prüfen die notwendigen Debug-Laufzeitdateien.
+Lokale Windows-SDK-/Java-Warnungen werden getrennt von Fehlern dokumentiert.
+
+## Historischer Prüfstand · 26.09.2026
+
 Stand: 26.09.2026, lokale Arbeitskopie auf `codex/mobile-foundation`.
 Referenzumfang und Einzelnachweise: [85-Punkte-Funktionsmatrix](feature-parity.md).
 
