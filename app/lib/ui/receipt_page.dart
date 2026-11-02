@@ -3,6 +3,7 @@ import '../data/checkout_store.dart';
 import '../domain/models.dart';
 import '../domain/money.dart';
 import 'messages.dart';
+import 'receipt_qr_dialog.dart';
 import 'package:printing/printing.dart';
 import '../services/catalog_reports.dart';
 import '../domain/catalog_search.dart';
@@ -18,7 +19,7 @@ class ReceiptPage extends StatefulWidget {
 class _ReceiptPageState extends State<ReceiptPage> {
   List<Receipt> _receipts = [];
   List<SaleEvent> _events = [];
-  bool _busy = true;
+  bool _busy = true, _receiptQr = true;
   String? _error;
   String _query = '';
   @override
@@ -36,10 +37,12 @@ class _ReceiptPageState extends State<ReceiptPage> {
     try {
       final receipts = await widget.store.receipts();
       final events = await widget.store.events();
+      final receiptQr = await receiptQrEnabled(widget.store);
       if (mounted) {
         setState(() {
           _receipts = receipts;
           _events = events;
+          _receiptQr = receiptQr;
         });
       }
     } catch (e) {
@@ -280,13 +283,24 @@ class _ReceiptPageState extends State<ReceiptPage> {
             style: TextStyle(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: _busy ? null : () => _print(receipt),
-              icon: const Icon(Icons.print_outlined),
-              label: const Text('Bon erneut drucken / teilen'),
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _busy ? null : () => _print(receipt),
+                icon: const Icon(Icons.print_outlined),
+                label: const Text('Bon erneut drucken / teilen'),
+              ),
+              if (_receiptQr)
+                OutlinedButton.icon(
+                  onPressed: _busy
+                      ? null
+                      : () => showReceiptQr(context, widget.store, receipt),
+                  icon: const Icon(Icons.qr_code_2),
+                  label: const Text('QR-Quittung'),
+                ),
+            ],
           ),
           const SizedBox(height: 6),
           SelectableText(

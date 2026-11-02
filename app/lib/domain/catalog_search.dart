@@ -141,6 +141,25 @@ List<ArticleListing> filterCatalog({
   return result;
 }
 
+/// The positions printed on a receipt (PDF and QR alike).
+///
+/// A later cancellation attached to the original receipt is history, not a
+/// mutation of the originally printed purchase. Separate refund receipts do
+/// contain their cancellation position and negative total.
+List<SaleEvent> receiptPositions(Receipt receipt, List<SaleEvent> events) {
+  final own = events.where((e) => e.receiptId == receipt.id).toList();
+  final ownIds = own.map((e) => e.id).toSet();
+  final signedTotal = own.fold<int>(
+    0,
+    (sum, e) =>
+        sum +
+        (e.cancelOf == null ? e.listing.priceCents : -e.listing.priceCents),
+  );
+  return signedTotal == receipt.totalCents
+      ? own
+      : own.where((e) => !ownIds.contains(e.cancelOf)).toList();
+}
+
 List<SaleEvent> receiptHistory(Receipt receipt, List<SaleEvent> events) {
   final own = events
       .where((e) => e.receiptId == receipt.id)

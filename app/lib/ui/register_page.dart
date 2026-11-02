@@ -12,6 +12,7 @@ import 'seller_article_dialog.dart';
 import 'messages.dart';
 import 'payment_dialog.dart';
 import 'receipt_page.dart';
+import 'receipt_qr_dialog.dart';
 import 'package:printing/printing.dart';
 import '../services/catalog_reports.dart';
 import 'tones.dart';
@@ -39,7 +40,10 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage>
     with WidgetsBindingObserver {
   /// Defaults on; switched in the settings page (`uiSettings`).
-  bool _keepScreenOn = true, _vibrate = true;
+  bool _keepScreenOn = true, _vibrate = true, _receiptQr = true;
+
+  /// Just-completed receipt offered as offline QR until the next article (KAN-594).
+  Receipt? _qrReceipt;
   bool _foreground = true, _wakelockOn = false;
   final _code = TextEditingController();
   late final FocusNode _scanFocus;
@@ -90,6 +94,8 @@ class _RegisterPageState extends State<RegisterPage>
       if (saved is Map) {
         _keepScreenOn = saved['keepScreenOn'] != false;
         _vibrate = saved['scanVibration'] != false;
+        _receiptQr = saved['receiptQr'] != false;
+        if (!_receiptQr && mounted) setState(() => _qrReceipt = null);
       }
     } catch (_) {
       // Defaults stay active; selling is never blocked by settings.
@@ -119,9 +125,24 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   /// Short pulse on success, long vibration on a rejected article (KAN-593).
+  /// An accepted article starts the next customer and drops the QR offer.
   void _haptic(bool accepted) {
+    if (accepted && _qrReceipt != null && mounted) {
+      setState(() => _qrReceipt = null);
+    }
     if (!_vibrate) return;
     accepted ? HapticFeedback.lightImpact() : HapticFeedback.vibrate();
+  }
+
+  Future<void> _showQr(Receipt receipt) async {
+    _scanFocus.unfocus();
+    _modal = true;
+    try {
+      await showReceiptQr(context, widget.store, receipt);
+    } finally {
+      _modal = false;
+      _focusScanner();
+    }
   }
 
   Future<void> _load() async {
@@ -470,12 +491,16 @@ class _RegisterPageState extends State<RegisterPage>
       _returnMode = false;
       _lastLine = null;
       _lastRaw = null;
+      _qrReceipt = _receiptQr ? receipt : null;
       await _run(() async {});
       if (mounted && receipt != null) {
         await showDialog<void>(
           context: context,
           builder: (context) => _SavedScreen(
             receipt: receipt!,
+            onQr: _receiptQr
+                ? () => showReceiptQr(context, widget.store, receipt!)
+                : null,
             onPrint: () async {
               final bytes = await buildReceiptPdf(
                 widget.store.session,
@@ -488,7 +513,12 @@ class _RegisterPageState extends State<RegisterPage>
         );
       }
     }
-    _modal = false;
+    // Rebuild so controls disabled while the sheet was open become usable.
+    if (mounted) {
+      setState(() => _modal = false);
+    } else {
+      _modal = false;
+    }
     if (parked && mounted) await _park();
     if (mounted) _focusScanner();
   }
@@ -679,6 +709,15 @@ class _RegisterPageState extends State<RegisterPage>
                       spacing: 8,
                       runSpacing: 8,
                       children: [
+                        if (_qrReceipt != null)
+                          OutlinedButton.icon(
+                            key: const Key('receipt-qr'),
+                            onPressed: _busy || _modal
+                                ? null
+                                : () => _showQr(_qrReceipt!),
+                            icon: const Icon(Icons.qr_code_2),
+                            label: Text('QR-Quittung ${_qrReceipt!.number}'),
+                          ),
                         OutlinedButton.icon(
                           onPressed: _busy || _modal || _cart.isEmpty
                               ? null
@@ -1102,7 +1141,10 @@ class _CartLine extends StatelessWidget {
 class _SavedScreen extends StatelessWidget {
   final Receipt receipt;
   final Future<void> Function() onPrint;
-  const _SavedScreen({required this.receipt, required this.onPrint});
+
+  /// Offline QR receipt on request; null when switched off.
+  final Future<void> Function()? onQr;
+  const _SavedScreen({required this.receipt, required this.onPrint, this.onQr});
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1179,6 +1221,19 @@ class _SavedScreen extends StatelessWidget {
                 icon: const Icon(Icons.print_outlined),
                 label: const Text('Bon drucken'),
               ),
+              if (onQr != null) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: fg,
+                    backgroundColor: Colors.transparent,
+                    side: BorderSide(color: soft),
+                  ),
+                  onPressed: onQr,
+                  icon: const Icon(Icons.qr_code_2),
+                  label: const Text('QR-Quittung'),
+                ),
+              ],
               const SizedBox(height: 10),
               FilledButton.icon(
                 style: FilledButton.styleFrom(

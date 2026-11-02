@@ -59,6 +59,7 @@ class _SettingsPageState extends State<SettingsPage> {
         'cameraEnabled': true,
         'keepScreenOn': true,
         'scanVibration': true,
+        'receiptQr': true,
         'cameraFacing': 'back',
         'cameraTorch': false,
         'barcodeFormat': 'all',
@@ -377,6 +378,17 @@ class _SettingsPageState extends State<SettingsPage> {
                               : (v) => setState(
                                   () => _values['scanVibration'] = v,
                                 ),
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('QR-Quittung anbieten'),
+                          subtitle: const Text(
+                            'Schaltfläche nach dem Kassieren und in der Belegliste. Funktioniert ohne Netz.',
+                          ),
+                          value: _values['receiptQr'] != false,
+                          onChanged: _saving
+                              ? null
+                              : (v) => setState(() => _values['receiptQr'] = v),
                         ),
                       ]),
                       _section('Kamera', [
