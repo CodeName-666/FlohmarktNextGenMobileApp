@@ -512,9 +512,7 @@ class _SyncPageState extends State<SyncPage> {
                     controller: _email,
                     enabled: !_busy,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Organisator-E-Mail',
-                    ),
+                    decoration: const InputDecoration(labelText: 'E-Mail'),
                   ),
                   TextField(
                     controller: _password,
