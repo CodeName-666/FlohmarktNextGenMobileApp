@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:ui';
 import 'services/app_diagnostics.dart';
+import 'services/backup_exclusion.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
@@ -27,6 +28,12 @@ Future<void> main() async {
       unawaited(AppDiagnostics.record('unhandled', error, stack));
       return true;
     };
+    try {
+      await BackupExclusion.excludeDirectory(directory);
+    } catch (e, stack) {
+      // Never block the register; the failure stays visible in diagnostics.
+      await AppDiagnostics.record('backup', e, stack);
+    }
     String? startupError;
     final library = await MarketLibrary.open(
       factory: databaseFactory,
