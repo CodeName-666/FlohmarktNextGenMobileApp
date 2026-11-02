@@ -57,6 +57,8 @@ class _SettingsPageState extends State<SettingsPage> {
       _values = {
         'themeMode': widget.themeMode.name,
         'cameraEnabled': true,
+        'keepScreenOn': true,
+        'scanVibration': true,
         'cameraFacing': 'back',
         'cameraTorch': false,
         'barcodeFormat': 'all',
@@ -349,6 +351,33 @@ class _SettingsPageState extends State<SettingsPage> {
                           'light': 'Hell',
                           'dark': 'Dunkel',
                         }),
+                      ]),
+                      _section('Bedienung am Stand', [
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Bildschirm wach halten'),
+                          subtitle: const Text(
+                            'Nur solange die Kasse angezeigt wird. Andere Seiten sperren normal.',
+                          ),
+                          value: _values['keepScreenOn'] != false,
+                          onChanged: _saving
+                              ? null
+                              : (v) =>
+                                    setState(() => _values['keepScreenOn'] = v),
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Vibration bei Scans'),
+                          subtitle: const Text(
+                            'Kurz bei Erfolg, lang bei abgelehntem Artikel.',
+                          ),
+                          value: _values['scanVibration'] != false,
+                          onChanged: _saving
+                              ? null
+                              : (v) => setState(
+                                  () => _values['scanVibration'] = v,
+                                ),
+                        ),
                       ]),
                       _section('Kamera', [
                         SwitchListTile(

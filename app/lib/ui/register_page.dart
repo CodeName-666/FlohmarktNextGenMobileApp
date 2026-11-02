@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../data/checkout_store.dart';
 import '../data/demo_catalog.dart';
 import '../domain/models.dart';
@@ -19,12 +21,26 @@ class RegisterPage extends StatefulWidget {
 
   /// False while another tab of the app shell is shown.
   final bool active;
-  const RegisterPage({super.key, required this.store, this.active = true});
+
+  /// Keeps the display on while selling (KAN-593); replaceable in tests.
+  final Future<void> Function(bool enable) wakelock;
+  const RegisterPage({
+    super.key,
+    required this.store,
+    this.active = true,
+    this.wakelock = _platformWakelock,
+  });
+  static Future<void> _platformWakelock(bool enable) =>
+      WakelockPlus.toggle(enable: enable);
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends State<RegisterPage>
+    with WidgetsBindingObserver {
+  /// Defaults on; switched in the settings page (`uiSettings`).
+  bool _keepScreenOn = true, _vibrate = true;
+  bool _foreground = true, _wakelockOn = false;
   final _code = TextEditingController();
   late final FocusNode _scanFocus;
   List<CartEntry> _cart = [];
@@ -61,8 +77,51 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scanFocus = FocusNode(canRequestFocus: widget.active);
     _load();
+    _loadStandSettings();
+  }
+
+  /// Reads the stand settings; an unreadable value keeps the safe default (on).
+  Future<void> _loadStandSettings() async {
+    try {
+      final saved = await widget.store.setting('uiSettings');
+      if (saved is Map) {
+        _keepScreenOn = saved['keepScreenOn'] != false;
+        _vibrate = saved['scanVibration'] != false;
+      }
+    } catch (_) {
+      // Defaults stay active; selling is never blocked by settings.
+    }
+    await _applyWakelock();
+  }
+
+  /// Only the visible register in the foreground holds the display on.
+  Future<void> _applyWakelock() async {
+    final wanted = mounted && widget.active && _foreground && _keepScreenOn;
+    if (wanted == _wakelockOn) return;
+    _wakelockOn = wanted;
+    try {
+      await widget.wakelock(wanted);
+    } catch (_) {
+      // Missing platform support only means the normal screen timeout applies.
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // `inactive` covers short interruptions such as the control center.
+    _foreground =
+        state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
+    _applyWakelock();
+  }
+
+  /// Short pulse on success, long vibration on a rejected article (KAN-593).
+  void _haptic(bool accepted) {
+    if (!_vibrate) return;
+    accepted ? HapticFeedback.lightImpact() : HapticFeedback.vibrate();
   }
 
   Future<void> _load() async {
@@ -89,6 +148,8 @@ class _RegisterPageState extends State<RegisterPage> {
       _run(() async {});
       _focusScanner();
     }
+    // Settings may have changed on another tab; the lock follows visibility.
+    if (widget.active != old.active) _loadStandSettings();
   }
 
   void _focusScanner() {
@@ -99,6 +160,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (_wakelockOn) {
+      _wakelockOn = false;
+      widget.wakelock(false).catchError((_) {});
+    }
     _code.dispose();
     _scanFocus.dispose();
     _scroll.dispose();
@@ -171,6 +237,7 @@ class _RegisterPageState extends State<RegisterPage> {
             await widget.store.addScan(raw);
           }
         });
+        _haptic(success);
         if (success && _cart.isNotEmpty) {
           setState(() {
             _lastLine = _cart.last;
@@ -213,6 +280,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 visibleRevision: selected.revision,
               ),
       );
+      _haptic(success);
       if (success && _cart.isNotEmpty) {
         setState(() {
           _lastLine = _cart.last;
@@ -234,18 +302,24 @@ class _RegisterPageState extends State<RegisterPage> {
         builder: (_) => CameraPage(
           store: widget.store,
           onScan: (raw) async {
-            if (_recovered && !_recoveryChecked) {
-              throw StateError('Zuerst Artikel und Zahlungsstand prüfen.');
+            try {
+              if (_recovered && !_recoveryChecked) {
+                throw StateError('Zuerst Artikel und Zahlungsstand prüfen.');
+              }
+              final listing = await widget.store.resolve(raw);
+              if (_returnMode) {
+                await widget.store.addReturn(listing.listingId);
+              } else {
+                await widget.store.addScan(raw);
+              }
+              _lastLine = (await widget.store.cartLines()).last;
+              _lastRaw = raw;
+              _haptic(true);
+              return '${_returnMode ? 'Rückgabe' : 'Im Warenkorb'}: ${listing.title} · ${formatCents(listing.priceCents)}';
+            } catch (_) {
+              _haptic(false);
+              rethrow;
             }
-            final listing = await widget.store.resolve(raw);
-            if (_returnMode) {
-              await widget.store.addReturn(listing.listingId);
-            } else {
-              await widget.store.addScan(raw);
-            }
-            _lastLine = (await widget.store.cartLines()).last;
-            _lastRaw = raw;
-            return '${_returnMode ? 'Rückgabe' : 'Im Warenkorb'}: ${listing.title} · ${formatCents(listing.priceCents)}';
           },
         ),
       ),
@@ -919,6 +993,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             item.labelRevision,
                           ),
                   );
+                  _haptic(success);
                   if (success && _cart.isNotEmpty && mounted) {
                     setState(() {
                       _lastLine = _cart.last;
