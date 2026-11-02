@@ -611,11 +611,6 @@ class _SyncPageState extends State<SyncPage> {
                             () => _service.uploadSales(retryOnly: true),
                           ),
                           (
-                            'Listing-Status senden',
-                            true,
-                            () => _service.uploadListingStatus(),
-                          ),
-                          (
                             'Tagesumsatz senden',
                             true,
                             () => _service.uploadSummary(),
@@ -658,11 +653,7 @@ class _SyncPageState extends State<SyncPage> {
                             onSelected: (value) =>
                                 setState(() => _conflictsOnly = value),
                           ),
-                          for (final stage in [
-                            'sales-batch',
-                            'listing-status',
-                            'sales-summary',
-                          ])
+                          for (final stage in ['sales-batch', 'sales-summary'])
                             FilterChip(
                               label: Text(stage),
                               selected: _stageFilter == stage,

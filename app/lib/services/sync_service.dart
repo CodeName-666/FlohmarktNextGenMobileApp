@@ -102,9 +102,13 @@ class SyncService {
     }
   }
 
+  /// Sales without a backend listing stay local and appear in [conflicts], as in
+  /// the desktop register: the batch contract requires a listing for every item.
   Future<SyncResult> uploadSales({bool retryOnly = false}) async {
     _validateUpload();
-    var events = await store.pendingEvents();
+    var events = (await store.pendingEvents())
+        .where((event) => !event.listing.unexpected)
+        .toList();
     if (retryOnly) {
       final queue = ((await store.setting('syncReuploadQueue')) as List? ?? [])
           .cast<String>()
@@ -131,9 +135,11 @@ class SyncService {
           );
         }
       }
+      // 409 still carries every item's outcome; conflicts go to review, the rest is acknowledged.
       final response = await api.request(
         'POST',
         '/sales/batch',
+        accepted: const {409},
         json: {
           'marketId': int.parse(store.session.marketId),
           'exportGeneration': store.session.exportGeneration,
@@ -173,37 +179,6 @@ class SyncService {
           .where((r) => {'created', 'skipped_duplicate'}.contains(r['result']))
           .length;
       return SyncResult('sales-batch', events.length, acknowledged, results);
-    });
-  }
-
-  Future<SyncResult> uploadListingStatus() async {
-    _validateUpload();
-    final all = await store.events();
-    final effective = _effective(all);
-    final ids = effective
-        .where((e) => !e.listing.unexpected)
-        .map((e) => e.listing.listingId)
-        .toSet();
-    return _run('listing-status', all, () async {
-      if (ids.isEmpty) return const SyncResult('listing-status', 0, 0, []);
-      final response = await api.request(
-        'POST',
-        '/listings/status',
-        json: {
-          'marketId': int.parse(store.session.marketId),
-          'updates': [
-            for (final id in ids.toList()..sort())
-              {'listingId': id, 'fromStatus': 'For Sale', 'toStatus': 'Sold'},
-          ],
-        },
-      );
-      final results = _parseResults(
-        response.body,
-        ['results', 'updates', 'items'],
-        'listingId',
-        ids,
-      );
-      return SyncResult('listing-status', ids.length, 0, results);
     });
   }
 

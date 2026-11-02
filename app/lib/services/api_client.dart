@@ -93,11 +93,14 @@ class ApiClient {
     setToken(body['token'] as String);
   }
 
+  /// [accepted] lists non-2xx statuses whose body is a regular result, such as
+  /// the per-item outcome of a batch with conflicts (409).
   Future<http.Response> request(
     String method,
     String path, {
     Object? json,
     Map<String, Object?>? params,
+    Set<int> accepted = const {},
   }) async {
     final uri = Uri.parse(
       '$baseUrl/${path.replaceFirst(RegExp(r"^/+"), "")}',
@@ -132,7 +135,7 @@ class ApiClient {
       if (response != null &&
           (!{500, 502, 503, 504}.contains(response.statusCode) ||
               attempt == maxAttempts - 1)) {
-        _check(response);
+        if (!accepted.contains(response.statusCode)) _check(response);
         return response;
       }
       if (attempt < maxAttempts - 1) {
