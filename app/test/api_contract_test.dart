@@ -161,6 +161,32 @@ void main() {
         ..setToken('test-token');
       final markets = await SyncService(null, client).markets(organizationId);
       expect(markets.map((m) => m['id']), contains(marketId));
+      expect(markets.singleWhere((m) => m['id'] == marketId)['myRoles'], [
+        'cashier',
+      ]);
+    });
+
+    test('only markets with cashier or organizer role are listed', () async {
+      final listed = Map<String, Object?>.from(
+        fixture('markets')['response'] as Map,
+      );
+      final template = Map<String, Object?>.from(
+        (listed['items'] as List).first as Map,
+      );
+      listed['items'] = [
+        for (final (id, roles) in [
+          (1, ['organizer']),
+          (2, ['cashier', 'helper']),
+          (3, ['helper']),
+          (4, <String>[]),
+          (5, null),
+        ])
+          {...template, 'id': id, 'myRoles': roles},
+      ];
+      final client = api((_) => http.Response(jsonEncode(listed), 200))
+        ..setToken('test-token');
+      final markets = await SyncService(null, client).markets(organizationId);
+      expect(markets.map((m) => m['id']), [1, 2]);
     });
 
     test('real backend export parses, including its checksum', () async {
@@ -181,7 +207,13 @@ void main() {
       (
         'export_forbidden',
         403,
-        isA<ApiException>().having((e) => e.statusCode, 'status', 403),
+        isA<ApiException>()
+            .having((e) => e.statusCode, 'status', 403)
+            .having(
+              (e) => e.message,
+              'message',
+              'Für diesen Markt fehlt die Kassenrolle.',
+            ),
       ),
     ]) {
       test('export answer $status is documented and surfaced', () async {

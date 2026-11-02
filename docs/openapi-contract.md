@@ -63,7 +63,8 @@ SHA-256 (über LF-Zeilenenden) fest.
 | `POST /listings/status` wird für eingefrorene Märkte immer abgelehnt (423 vor, 409 `MARKET_SALES_STARTED` nach Verkaufsbeginn). | Der Schritt „Listing-Status senden“ entfällt in der App; der Server leitet den Verkauft-Status aus den Verkäufen ab. Die Spezifikation beschreibt beide 409-Antworten. |
 | `schedule.setupStartsAt` und `SaleConflict.details` kommen als `null`. | In der Spezifikation als `null`-fähig beschrieben. |
 | Der Export liefert nie 423; die Meldung „Markt nicht eingefroren“ beim Download greift nicht. | Bewusst unverändert: Ein nicht eingefrorener Markt hat Exportgeneration 0 und wird beim Download als „kein V2-Paket“ abgelehnt. |
-| `GET /markets` ignoriert ein ungültiges Token und liefert die öffentliche Liste (kein 401). | Entspricht der Spezifikation; die App erkennt Kassierer-Märkte später über die eigenen Rollen (KAN-591). |
+| `GET /markets` ignoriert ein ungültiges Token und liefert die öffentliche Liste (kein 401). | Entspricht der Spezifikation. Angemeldete Aufrufer erhalten je Markt `myRoles` (KAN-591); die App listet nur Märkte mit `cashier` oder `organizer`. |
+| Ein Konto nur mit Kassierer-Rolle konnte Export und Tagesumsatz nicht abrufen und auf eingefrorene Märkte keine Verkäufe hochladen (423). | Backend: eigenes Recht `market.cash_export`, Tagesumsatz für Kassierer, Verkaufs-Upload für Kassierer trotz Einfrieren (KAN-591). Die Testdaten stammen jetzt von einem reinen Kassierer-Konto. |
 
 ## Geld
 

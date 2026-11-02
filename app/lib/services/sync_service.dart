@@ -64,12 +64,22 @@ class SyncService {
     if (body is! Map || body['items'] is! List) {
       throw const FormatException('Ungültige Marktliste.');
     }
-    return (body['items'] as List).map((e) {
-      if (e is! Map || e['id'] is! int || (e['id'] as int) <= 0) {
-        throw const FormatException('Ungültiger Markt in der Liste.');
-      }
-      return Map<String, Object?>.from(e);
-    }).toList();
+    return (body['items'] as List)
+        .map((e) {
+          if (e is! Map || e['id'] is! int || (e['id'] as int) <= 0) {
+            throw const FormatException('Ungültiger Markt in der Liste.');
+          }
+          return Map<String, Object?>.from(e);
+        })
+        .where(_mayRunRegister)
+        .toList();
+  }
+
+  /// Only markets where the account may load the register package (KAN-591).
+  static bool _mayRunRegister(Map<String, Object?> market) {
+    final roles = market['myRoles'];
+    return roles is List &&
+        roles.any((r) => r == 'cashier' || r == 'organizer');
   }
 
   Future<MarketPackage> download(int marketId, {int? registerNumber}) async {
@@ -92,6 +102,12 @@ class SyncService {
         statusCode: 423,
       );
     } on ApiException catch (error) {
+      if (error.statusCode == 403) {
+        throw const ApiException(
+          'Für diesen Markt fehlt die Kassenrolle.',
+          statusCode: 403,
+        );
+      }
       if (error.statusCode == 422) {
         throw const ApiException(
           'Feldprofil ungültig: Pflichtfeld Preis fehlt.',

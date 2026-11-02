@@ -520,7 +520,9 @@ class _SyncPageState extends State<SyncPage> {
                                   if (mounted) {
                                     setState(() => _markets = markets);
                                   }
-                                  return '${markets.length} Märkte geladen.';
+                                  return markets.isEmpty
+                                      ? 'Kein Markt mit Kassen- oder Organisatorrolle für dieses Konto.'
+                                      : '${markets.length} Märkte geladen.';
                                 }),
                           icon: const Icon(Icons.cloud_download_outlined),
                           label: const Text('Märkte laden'),

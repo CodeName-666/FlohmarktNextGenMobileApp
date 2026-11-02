@@ -11416,6 +11416,15 @@ components:
 
           type: integer
 
+        myRoles:
+          type: [array, 'null']
+          description: |
+            Effective market roles of the authenticated caller, set by `GET /markets`
+            (KAN-591). Managing the owning organization counts as `organizer`. `null`
+            in all other market responses.
+          items:
+            $ref: '#/components/schemas/MarketRole'
+
         organizationId:
 
           type: string
