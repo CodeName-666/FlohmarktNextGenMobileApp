@@ -246,7 +246,6 @@ class _ReceiptPageState extends State<ReceiptPage> {
     required bool expanded,
   }) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final history = receiptHistory(receipt, _events);
     final time = localEventTime(receipt.occurredAt).split(' ').last;
     return Card(
@@ -273,43 +272,63 @@ class _ReceiptPageState extends State<ReceiptPage> {
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 8, 12),
         expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final event in history)
-            _position(context, event, cancelled.contains(event.id)),
-          const SizedBox(height: 8),
-          Text(
-            receipt.tenderedKnown
-                ? 'Gegeben ${formatCents(receipt.tenderedCents)} · Rückgeld ${formatCents(receipt.changeCents)}'
-                : 'Bargeldübergabe bestätigt · Betrag nicht erfasst',
-            style: TextStyle(color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                onPressed: _busy ? null : () => _print(receipt),
-                icon: const Icon(Icons.print_outlined),
-                label: const Text('Bon erneut drucken / teilen'),
-              ),
-              if (_receiptQr)
-                OutlinedButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () => showReceiptQr(context, widget.store, receipt),
-                  icon: const Icon(Icons.qr_code_2),
-                  label: const Text('QR-Quittung'),
-                ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          SelectableText(
-            'Kasse ${receipt.registerNumber} · ${localEventTime(receipt.occurredAt)} · Vorgang ${receipt.id}',
-            style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+          // The tile stores its expansion under the receipt key; the
+          // selectable texts below store scroll offsets, so they need their own.
+          KeyedSubtree(
+            key: PageStorageKey('${receipt.id}/content'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _receiptDetails(context, receipt, history, cancelled),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  List<Widget> _receiptDetails(
+    BuildContext context,
+    Receipt receipt,
+    List<SaleEvent> history,
+    Set<String> cancelled,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return [
+      for (final event in history)
+        _position(context, event, cancelled.contains(event.id)),
+      const SizedBox(height: 8),
+      Text(
+        receipt.tenderedKnown
+            ? 'Gegeben ${formatCents(receipt.tenderedCents)} · Rückgeld ${formatCents(receipt.changeCents)}'
+            : 'Bargeldübergabe bestätigt · Betrag nicht erfasst',
+        style: TextStyle(color: scheme.onSurfaceVariant),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => _print(receipt),
+            icon: const Icon(Icons.print_outlined),
+            label: const Text('Bon erneut drucken / teilen'),
+          ),
+          if (_receiptQr)
+            OutlinedButton.icon(
+              onPressed: _busy
+                  ? null
+                  : () => showReceiptQr(context, widget.store, receipt),
+              icon: const Icon(Icons.qr_code_2),
+              label: const Text('QR-Quittung'),
+            ),
+        ],
+      ),
+      const SizedBox(height: 6),
+      SelectableText(
+        'Kasse ${receipt.registerNumber} · ${localEventTime(receipt.occurredAt)} · Vorgang ${receipt.id}',
+        style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+      ),
+    ];
   }
 
   Widget _position(BuildContext context, SaleEvent event, bool isCancelled) {
