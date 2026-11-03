@@ -10,9 +10,10 @@ Versionsdateien nicht mit anderem Inhalt überschreiben.
 
 ## CI und herunterladbare Builds
 
-`.github/workflows/flutter.yml` läuft auf Push nach `master`, auf Pull Requests
+`.github/workflows/flutter.yml` läuft auf Push nach `develop` oder `master`, auf Pull Requests
 und manuell. Formatierung, Analyse, Flutter-Tests und Artefaktvertragstests sind
-Voraussetzung für native Builds. `develop` löst keinen Push-Build aus.
+Voraussetzung für native Builds. Der GitHub-Standardbranch ist `develop`, damit
+GitHub den aktuellen Workflow einschließlich manuellem Start findet.
 Manuelle Ausführung auf anderen Branches erlaubt nur Vorbereitung, keine Signierung
 oder Veröffentlichung. Nach erfolgreichem Lauf sind die ZIP-Artefakte im jeweiligen
 GitHub-Actions-Lauf herunterladbar (Aufbewahrung 14 Tage).
