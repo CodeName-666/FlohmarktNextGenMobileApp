@@ -7,6 +7,7 @@ import 'package:flohmarkt_mobile/data/demo_catalog.dart';
 import 'package:flohmarkt_mobile/ui/register_page.dart';
 import 'package:flohmarkt_mobile/ui/payment_dialog.dart';
 import 'package:flohmarkt_mobile/ui/receipt_page.dart';
+import 'package:flohmarkt_mobile/ui/tones.dart';
 
 Future<void> settleDatabase(WidgetTester tester) async {
   for (var i = 0; i < 200; i++) {
@@ -303,6 +304,37 @@ void main() {
       await settleDatabase(tester);
       expect(tester.takeException(), isNull);
       expect(find.textContaining('Original: ${sale.id}'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await store.close();
+    });
+  });
+
+  // KAN-602: every print/export sheet offers a visible way out.
+  testWidgets('reprint sheet closes on Abbrechen without an action', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      final store = await CheckoutStore.open(
+        factory: databaseFactoryFfi,
+        path: inMemoryDatabasePath,
+      );
+      await store.addScan(demoPayload);
+      await store.checkout(250);
+      await tester.pumpWidget(MaterialApp(home: ReceiptPage(store: store)));
+      await settleDatabase(tester);
+      await tester.tap(find.text('Bon erneut drucken / teilen'));
+      for (var i = 0; i < 100; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        await tester.pump(const Duration(milliseconds: 20));
+        if (find.byType(SheetCancelTile).evaluate().isNotEmpty) break;
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('PDF teilen'), findsOneWidget);
+      await tester.tap(find.byType(SheetCancelTile));
+      await tester.pumpAndSettle();
+      expect(find.text('PDF teilen'), findsNothing);
+      expect(find.byType(ReceiptPage), findsOneWidget);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await store.close();
     });

@@ -107,6 +107,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                 title: const Text('PDF teilen'),
                 onTap: () => Navigator.pop(context, 'share'),
               ),
+              const SheetCancelTile(),
             ],
           ),
         ),

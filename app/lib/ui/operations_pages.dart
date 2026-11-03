@@ -62,6 +62,7 @@ Future<void> _report(
               title: const Text('Datei speichern'),
               onTap: () => Navigator.pop(context, 'save'),
             ),
+            const SheetCancelTile(),
           ],
         ),
       ),

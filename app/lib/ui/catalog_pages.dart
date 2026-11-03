@@ -568,6 +568,7 @@ Future<void> _print(
               leading: const Icon(Icons.save_alt),
               onTap: () => Navigator.pop(context, 'save'),
             ),
+            const SheetCancelTile(),
           ],
         ),
       ),
