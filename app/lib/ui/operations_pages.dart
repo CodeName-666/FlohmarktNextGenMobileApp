@@ -262,6 +262,11 @@ class _OperationsViewState extends State<_OperationsView> {
   );
 }
 
+TextStyle? _hintStyle(BuildContext context) => Theme.of(context)
+    .textTheme
+    .bodySmall
+    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+
 Future<void> _fees(
   BuildContext context,
   CheckoutStore store,
@@ -285,14 +290,19 @@ Future<void> _fees(
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 12,
             children: [
               Text(
                 data.bulkFees
                     ? 'Quelle: Marktexport'
                     : 'Quelle: lokale Einstellungen',
+                style: _hintStyle(context),
               ),
               if (data.bulkFees)
                 SwitchListTile(
+                  key: const Key('fees-override'),
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Marktgebühren überschreiben'),
                   value: override,
                   onChanged: saving
@@ -319,8 +329,9 @@ Future<void> _fees(
                   labelText: 'Gebühr je Stamm-/Boxnummer (€)',
                 ),
               ),
-              const Text(
+              Text(
                 'Nur der Umsatzanteil wird von der Auszahlung abgezogen. Die Boxgebühr ist gesonderter Markterlös. Rundung: exakte Cent, halbe Cent zur geraden Zahl.',
+                style: _hintStyle(context),
               ),
               if (error != null)
                 Text(
