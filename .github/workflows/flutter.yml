@@ -2,7 +2,7 @@ name: Mobile checks and release preparation
 
 on:
   push:
-    branches: [master]
+    branches: [develop, master]
   pull_request:
   workflow_dispatch:
 
