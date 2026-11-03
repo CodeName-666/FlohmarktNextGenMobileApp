@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'dart:ui' show ImageByteFormat;
 
 import 'package:flutter/material.dart';
@@ -40,32 +39,13 @@ Future<void> _settle(WidgetTester tester) async {
 void main() {
   setUpAll(() async {
     sqfliteFfiInit();
-    // Use the SDK's bundled app font so screenshots are readable rather than
-    // Flutter tests' square Ahem glyphs. This adds no runtime font dependency.
-    final config = File('.dart_tool/package_config.json').absolute;
-    final packages =
-        (jsonDecode(await config.readAsString()) as Map)['packages'] as List;
-    final flutter = packages.cast<Map>().singleWhere(
-      (p) => p['name'] == 'flutter',
-    );
-    final sdk = Directory.fromUri(
-      config.uri.resolve(flutter['rootUri'] as String),
-    ).parent.parent;
+    // Use existing app assets, not optional files in a developer's SDK cache.
+    // Real glyphs keep layout checks and screenshots representative.
     final fonts = FontLoader('Roboto');
-    for (final weight in ['regular', 'bold']) {
-      fonts.addFont(
-        File(
-          '${sdk.path}/bin/cache/artifacts/material_fonts/roboto-$weight.ttf',
-        ).readAsBytes().then(ByteData.sublistView),
-      );
-    }
+    fonts.addFont(rootBundle.load('assets/fonts/Roboto-Regular.ttf'));
     await fonts.load();
     final icons = FontLoader('MaterialIcons');
-    icons.addFont(
-      File(
-        '${sdk.path}/bin/cache/artifacts/material_fonts/materialicons-regular.otf',
-      ).readAsBytes().then(ByteData.sublistView),
-    );
+    icons.addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await icons.load();
   });
 
