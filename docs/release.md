@@ -152,7 +152,8 @@ Signierung und App-Store-Connect-Eintrag. Die Pipeline belegt keine Hardwareabna
 Stand 02.10.2026: Google verlangt seit 31.08.2026 für neue Apps und Updates
 Android 16/API 36; der gepinnte Flutter-SDK-Quellstand setzt compileSdk/targetSdk auf 36 (minSdk 24).
 Apple verlangt seit 28.04.2026 Xcode 26+ und iOS-26-SDK für Uploads.
-Das Deployment Target ist davon getrennt (Projekt: iOS 13).
+Das Deployment Target ist davon getrennt: seit KAN-587 mindestens **iOS 14**,
+entsprechend dem bereits verwendeten `file_picker_darwin`-Paket. iOS 13 wird nicht unterstützt.
 
 Quellen: [Flutter Android](https://docs.flutter.dev/deployment/android),
 [Flutter iOS](https://docs.flutter.dev/deployment/ios),
