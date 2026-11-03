@@ -43,7 +43,12 @@ void main() {
             isEmpty,
             reason: request.url.path,
           );
-          final response = answer(request);
+          final response = request.url.path == '/auth/me'
+              ? http.Response(
+                  jsonEncode((fixture('login_ok')['response'] as Map)['user']),
+                  200,
+                )
+              : answer(request);
           expect(
             contract.checkResponse(
               request.method,

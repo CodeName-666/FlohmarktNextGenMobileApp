@@ -85,11 +85,20 @@ class ApiClient {
   /// Ends the session on the server when reachable and always on the device.
   Future<void> logout({bool everywhere = false}) async {
     try {
+      if (everywhere && _token == null) {
+        throw const AuthenticationRequiredException();
+      }
       if (_token != null) {
         await request('POST', everywhere ? '/auth/logout-all' : '/auth/logout');
       }
     } on ApiException {
-      // Offline or already invalid: the local session is removed regardless.
+      if (everywhere) {
+        throw const ApiException(
+          'Auf diesem Gerät abgemeldet. Das Abmelden auf allen Geräten konnte '
+          'nicht bestätigt werden. Bitte erneut anmelden und wiederholen.',
+        );
+      }
+      // Local logout remains possible offline; global success needs a server reply.
     } finally {
       clearToken();
       await sessions?.clear();

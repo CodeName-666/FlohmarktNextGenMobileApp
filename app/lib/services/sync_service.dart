@@ -55,6 +55,9 @@ class SyncService {
     if (organizationId.trim().isEmpty) {
       throw const FormatException('Organisations-ID fehlt.');
     }
+    // /markets also returns 200 for invalid tokens (public list). Validate the
+    // session only during this online action, never while restoring offline.
+    await api.request('GET', '/auth/me');
     final response = await api.request(
       'GET',
       '/markets',

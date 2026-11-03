@@ -20,7 +20,7 @@ beschrieben sind. Ein Vertragstest hält App und Spezifikation zusammen.
 Die Prüfung ist streng: Felder, die das Schema nicht beschreibt, gelten als Fehler,
 und `null` ist nur erlaubt, wo das Schema es ausdrücklich zulässt.
 
-Abgedeckte Endpunkte: `POST /auth/login`, `GET /markets`, `GET /markets/{marketId}/export`,
+Abgedeckte Endpunkte: `POST /auth/login`, `GET /auth/me`, `GET /markets`, `GET /markets/{marketId}/export`,
 `POST /sales/batch`, `POST /markets/{marketId}/sales-summary`,
 `POST /markets/{id}/sale-conflicts` und `POST /auth/logout-all`.
 
@@ -63,10 +63,13 @@ SHA-256 (über LF-Zeilenenden) fest.
 | `POST /listings/status` wird für eingefrorene Märkte immer abgelehnt (423 vor, 409 `MARKET_SALES_STARTED` nach Verkaufsbeginn). | Der Schritt „Listing-Status senden“ entfällt in der App; der Server leitet den Verkauft-Status aus den Verkäufen ab. Die Spezifikation beschreibt beide 409-Antworten. |
 | `schedule.setupStartsAt` und `SaleConflict.details` kommen als `null`. | In der Spezifikation als `null`-fähig beschrieben. |
 | Der Export liefert nie 423; die Meldung „Markt nicht eingefroren“ beim Download greift nicht. | Bewusst unverändert: Ein nicht eingefrorener Markt hat Exportgeneration 0 und wird beim Download als „kein V2-Paket“ abgelehnt. |
-| `GET /markets` ignoriert ein ungültiges Token und liefert die öffentliche Liste (kein 401). | Entspricht der Spezifikation. Angemeldete Aufrufer erhalten je Markt `myRoles` (KAN-591); die App listet nur Märkte mit `cashier` oder `organizer`. |
+| `GET /markets` ignoriert ein ungültiges Token und liefert die öffentliche Liste (kein 401). | Vor dem Online-Marktladen prüft die App die Sitzung über `GET /auth/me`. Dessen 401 löscht eine abgelaufene Anmeldung und fordert zur Neuanmeldung auf. Anschließend filtert die App `myRoles` auf `cashier` oder `organizer`. Offline-Kassieren benötigt diese Prüfung nicht. |
 | Ein Konto nur mit Kassierer-Rolle konnte Export und Tagesumsatz nicht abrufen und auf eingefrorene Märkte keine Verkäufe hochladen (423). | Backend: eigenes Recht `market.cash_export`, Tagesumsatz für Kassierer, Verkaufs-Upload für Kassierer trotz Einfrieren (KAN-591). Die Testdaten stammen jetzt von einem reinen Kassierer-Konto. |
 
 ## Geld
 
 Die App rechnet ausschließlich in ganzen Cent. Euro-Beträge (`priceSnapshot`) entstehen
 nur an der API-Grenze beim Senden; beim Lesen ist `priceSnapshotCents` maßgeblich.
+Der Tagesumsatz-Endpunkt berechnet nach dem Verkaufs-Upload die Summe aller Kassen
+aus dem Serverjournal. Die weiterhin gesendeten lokalen Summen sind nur noch
+Kompatibilitätsfelder. Erstattungen können an einem Tag zu einer negativen Antwortsumme führen.

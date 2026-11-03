@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flohmarkt_mobile/services/api_client.dart';
 import 'package:flohmarkt_mobile/services/app_diagnostics.dart';
 import 'package:flohmarkt_mobile/services/session_store.dart';
+import 'package:flohmarkt_mobile/services/sync_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -132,6 +133,52 @@ void main() {
     api.close();
     expect((await sessions.read())?.token, 'session-token-123');
   });
+
+  test('market selection rejects an expired restored session', () async {
+    final sessions = MemorySessionStore();
+    await sessions.write(const StoredSession(base, 'expired'));
+    final paths = <String>[];
+    final api = client(sessions, (request) {
+      paths.add(request.url.path);
+      return request.url.path == '/auth/me'
+          ? http.Response('{"message":"Invalid authentication token"}', 401)
+          : http.Response('{"items":[]}', 200);
+    });
+    await api.restoreSession();
+    await expectLater(
+      SyncService(null, api).markets('organization-1'),
+      throwsA(isA<AuthenticationRequiredException>()),
+    );
+    expect(paths, ['/auth/me']);
+    expect(api.hasToken, isFalse);
+    expect(await sessions.read(), isNull);
+  });
+
+  for (final offline in [true, false]) {
+    test(
+      'global logout reports ${offline ? 'network' : 'server'} failure',
+      () async {
+        final sessions = MemorySessionStore();
+        await sessions.write(const StoredSession(base, 'valid-token'));
+        final api = ApiClient(
+          base,
+          maxAttempts: 1,
+          sessions: sessions,
+          client: MockClient((_) async {
+            if (offline) throw const SocketException('offline');
+            return http.Response('{}', 500);
+          }),
+        );
+        await api.restoreSession();
+        await expectLater(
+          api.logout(everywhere: true),
+          throwsA(isA<ApiException>()),
+        );
+        expect(api.hasToken, isFalse);
+        expect(await sessions.read(), isNull);
+      },
+    );
+  }
 
   test(
     'secure store keeps only token and address and drops damaged entries',

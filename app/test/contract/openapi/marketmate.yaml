@@ -4122,13 +4122,14 @@ paths:
 
     post:
 
-      summary: Submit aggregated daily sales summary for one market
+      summary: Refresh daily sales summary from the market journal
 
       description: |
-        Phase 1A replacement for missing `Sale` persistence. Accepts an aggregated
-        daily revenue (sum of sales, count of transactions, count of cancellations)
-        per market and persists it as `MarketDailySummary`. Re-submitting the same
-        `(marketId, marketDay)` updates the aggregate and writes a new audit entry.
+        Recalculates the requested UTC day's totals from persisted sales and
+        cancellations of all registers under the market lock. Upload sales before
+        refreshing the summary. Legacy client totals are accepted but ignored.
+        Re-submitting the same `(marketId, marketDay)` refreshes the stored snapshot
+        and writes an audit entry; an unchanged journal produces unchanged totals.
 
       operationId: submitMarketDailySalesSummary
 
@@ -14100,9 +14101,10 @@ components:
       type: object
 
       description: |
-        Aggregated daily sales numbers submitted by the FlohmarktNextGenApp after a
-        market day. Idempotent per `(marketId, marketDay)` — repeating the call with
-        new figures overwrites the persisted aggregate and writes a new audit entry.
+        Refresh the requested UTC calendar day's totals from the server sales journal
+        across all registers. Client figures remain accepted for older clients but do
+        not replace the market-wide totals. Upload sales first. Repeating the call is
+        idempotent for an unchanged journal and writes a new audit entry.
 
       properties:
 
@@ -14144,7 +14146,7 @@ components:
 
       type: object
 
-      description: Persisted daily sales summary record for one market.
+      description: Server-journal totals for one market and UTC day, including signed refunds.
 
       properties:
 
@@ -14162,7 +14164,7 @@ components:
 
           type: integer
 
-          minimum: 0
+          description: Net journal revenue; may be negative on a refund-only day.
 
         salesCount:
 
