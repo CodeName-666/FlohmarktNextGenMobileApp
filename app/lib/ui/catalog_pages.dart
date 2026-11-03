@@ -75,7 +75,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
                 hintText: switch (_mode) {
                   ArticleSearchMode.description => 'Beschreibung oder Größe',
                   ArticleSearchMode.seller =>
-                    'Verkäufer, Box, Kurzcode oder Etikett',
+                    'Verkäufernummer, Kurzcode oder Etikett',
                   ArticleSearchMode.article =>
                     'Artikelnummer über alle Verkäufer',
                 },
@@ -96,7 +96,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
                     key: Key('mode-${mode.name}'),
                     label: Text(switch (mode) {
                       ArticleSearchMode.description => 'Beschreibung',
-                      ArticleSearchMode.seller => 'Verkäufer / Box',
+                      ArticleSearchMode.seller => 'Verkäufer',
                       ArticleSearchMode.article => 'Artikelnummer',
                     }),
                     selected: _mode == mode,

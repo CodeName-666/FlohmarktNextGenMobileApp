@@ -99,10 +99,13 @@ void main() {
             mode: mode,
           );
       expect(
-        search('7-1', ArticleSearchMode.seller).single.listingId,
+        search('42-1', ArticleSearchMode.seller).single.listingId,
         'listing-0',
       );
       expect(search('42', ArticleSearchMode.seller), hasLength(3));
+      // KAN-604: box numbers (7, 8, 9 here) are no seller search criterion.
+      expect(search('7', ArticleSearchMode.seller), isEmpty);
+      expect(search('7-1', ArticleSearchMode.seller), isEmpty);
       expect(search('0927001042', ArticleSearchMode.seller), hasLength(2));
       expect(search('09-27-001-042', ArticleSearchMode.seller), hasLength(2));
       expect(

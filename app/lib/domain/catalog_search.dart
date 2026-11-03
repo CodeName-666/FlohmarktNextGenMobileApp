@@ -94,16 +94,17 @@ List<ArticleListing> filterCatalog({
       return RegExp(r'^\d+$').hasMatch(text) &&
           int.tryParse(text) == article.articleNumber;
     }
+    // Seller numbers come from the label; box numbers are left out on purpose
+    // (KAN-604), since "1" would otherwise list box 1 of every seller. Legacy
+    // packages without a 15-digit code use the box as their seller number.
     if (text == article.sellerKey.toLowerCase()) return true;
     if (RegExp(r'^\d+$').hasMatch(text) && text.length < 14) {
-      final number = int.tryParse(text);
-      return number == article.boxNumber || number == article.sellerNumber;
+      return int.tryParse(text) == article.sellerNumber;
     }
     if (text == sellerIdentity(article).toLowerCase()) return true;
     final short = RegExp(r'^(\d+)-(\d+)$').firstMatch(text);
     if (short != null) {
-      final seller = int.tryParse(short[1]!);
-      return (seller == article.boxNumber || seller == article.sellerNumber) &&
+      return int.tryParse(short[1]!) == article.sellerNumber &&
           int.tryParse(short[2]!) == article.articleNumber;
     }
     try {
