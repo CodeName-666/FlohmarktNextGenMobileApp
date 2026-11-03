@@ -6,13 +6,17 @@ import 'package:share_plus/share_plus.dart';
 import '../data/checkout_store.dart';
 import '../data/market_library.dart';
 import '../services/api_client.dart';
+import '../services/session_store.dart';
 import '../services/sync_service.dart';
 import 'tones.dart';
 
 class SyncPage extends StatefulWidget {
   final CheckoutStore? store;
   final MarketLibrary? library;
-  const SyncPage({super.key, this.store, this.library});
+
+  /// Where the backend session is kept between app starts (KAN-592).
+  final SessionStore? sessions;
+  const SyncPage({super.key, this.store, this.library, this.sessions});
   @override
   State<SyncPage> createState() => _SyncPageState();
 }
@@ -24,6 +28,7 @@ class _SyncPageState extends State<SyncPage> {
       _organization = TextEditingController(),
       _register = TextEditingController(text: '1');
   ApiClient? _api;
+  late final SessionStore _sessions = widget.sessions ?? SecureSessionStore();
   bool _busy = false;
   bool _conflictsOnly = false;
   bool _editServer = true;
@@ -55,9 +60,30 @@ class _SyncPageState extends State<SyncPage> {
       setState(
         () => _editServer = _base.text.isEmpty || _organization.text.isEmpty,
       );
+      await _resumeSession();
       await _refresh();
     } catch (error) {
       if (mounted) setState(() => _message = '$error');
+    }
+  }
+
+  /// Picks up the stored session for the saved API address; an unreadable key
+  /// store only means logging in again, never a blocked register.
+  Future<void> _resumeSession() async {
+    if (_base.text.trim().isEmpty) return;
+    try {
+      final api = ApiClient(_base.text, sessions: _sessions);
+      if (await api.restoreSession()) {
+        _api?.close();
+        _api = api;
+        if (mounted) {
+          setState(() => _message = 'Gespeicherte Anmeldung übernommen.');
+        }
+      } else {
+        api.close();
+      }
+    } catch (_) {
+      // Invalid address or unavailable key store: show the login form.
     }
   }
 
@@ -105,8 +131,10 @@ class _SyncPageState extends State<SyncPage> {
       final message = await action();
       if (mounted) setState(() => _message = message);
     } catch (error) {
-      final message =
-          error is AccountLockedException && error.lockedUntil != null
+      final message = error is AuthenticationRequiredException
+          ? 'Anmeldung abgelaufen oder beendet. Bitte neu anmelden; '
+                'Kassieren geht offline weiter.'
+          : error is AccountLockedException && error.lockedUntil != null
           ? 'Konto gesperrt bis ${error.lockedUntil}.'
           : error.toString();
       if (mounted) setState(() => _message = message);
@@ -126,7 +154,7 @@ class _SyncPageState extends State<SyncPage> {
 
   Future<String> _login() async {
     _api?.close();
-    _api = ApiClient(_base.text);
+    _api = ApiClient(_base.text, sessions: _sessions);
     try {
       await _api!.login(_email.text, _password.text);
     } finally {
@@ -142,7 +170,7 @@ class _SyncPageState extends State<SyncPage> {
     } else {
       await widget.store?.setSetting('apiSettings', settings);
     }
-    return 'Angemeldet. Die Anmeldung gilt bis zum Verlassen dieser Seite.';
+    return 'Angemeldet. Die Anmeldung bleibt nach einem Neustart erhalten.';
   }
 
   Future<String> _download(Map<String, Object?> market) async {
@@ -415,27 +443,39 @@ class _SyncPageState extends State<SyncPage> {
                   ),
                 ),
               _step(context, 1, 'Anmeldung', loggedIn, [
-                if (loggedIn)
+                if (loggedIn) ...[
                   Row(
                     children: [
                       Expanded(
                         child: Text(
-                          'Angemeldet als ${_email.text}\nGilt bis zum Verlassen dieser Seite.',
+                          'Angemeldet als ${_email.text}\nBleibt nach einem Neustart angemeldet.',
                           style: muted,
                         ),
                       ),
                       OutlinedButton(
                         onPressed: _busy
                             ? null
-                            : () => setState(() {
-                                _api!.clearToken();
-                                _message = 'Abgemeldet.';
+                            : () => _run(() async {
+                                await _api!.logout();
+                                return 'Abgemeldet. Die Anmeldung ist vom Gerät entfernt.';
                               }),
                         child: const Text('Abmelden'),
                       ),
                     ],
-                  )
-                else ...[
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _busy
+                          ? null
+                          : () => _run(() async {
+                              await _api!.logout(everywhere: true);
+                              return 'Auf allen Geräten abgemeldet.';
+                            }),
+                      child: const Text('Auf allen Geräten abmelden'),
+                    ),
+                  ),
+                ] else ...[
                   if (_editServer) ...[
                     TextField(
                       controller: _base,
@@ -472,9 +512,7 @@ class _SyncPageState extends State<SyncPage> {
                     controller: _email,
                     enabled: !_busy,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Organisator-E-Mail',
-                    ),
+                    decoration: const InputDecoration(labelText: 'E-Mail'),
                   ),
                   TextField(
                     controller: _password,
@@ -520,7 +558,9 @@ class _SyncPageState extends State<SyncPage> {
                                   if (mounted) {
                                     setState(() => _markets = markets);
                                   }
-                                  return '${markets.length} Märkte geladen.';
+                                  return markets.isEmpty
+                                      ? 'Kein Markt mit Kassen- oder Organisatorrolle für dieses Konto.'
+                                      : '${markets.length} Märkte geladen.';
                                 }),
                           icon: const Icon(Icons.cloud_download_outlined),
                           label: const Text('Märkte laden'),
@@ -611,11 +651,6 @@ class _SyncPageState extends State<SyncPage> {
                             () => _service.uploadSales(retryOnly: true),
                           ),
                           (
-                            'Listing-Status senden',
-                            true,
-                            () => _service.uploadListingStatus(),
-                          ),
-                          (
                             'Tagesumsatz senden',
                             true,
                             () => _service.uploadSummary(),
@@ -658,11 +693,7 @@ class _SyncPageState extends State<SyncPage> {
                             onSelected: (value) =>
                                 setState(() => _conflictsOnly = value),
                           ),
-                          for (final stage in [
-                            'sales-batch',
-                            'listing-status',
-                            'sales-summary',
-                          ])
+                          for (final stage in ['sales-batch', 'sales-summary'])
                             FilterChip(
                               label: Text(stage),
                               selected: _stageFilter == stage,

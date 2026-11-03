@@ -3,6 +3,7 @@ import '../data/checkout_store.dart';
 import '../domain/models.dart';
 import '../domain/money.dart';
 import 'messages.dart';
+import 'receipt_qr_dialog.dart';
 import 'package:printing/printing.dart';
 import '../services/catalog_reports.dart';
 import '../domain/catalog_search.dart';
@@ -18,7 +19,7 @@ class ReceiptPage extends StatefulWidget {
 class _ReceiptPageState extends State<ReceiptPage> {
   List<Receipt> _receipts = [];
   List<SaleEvent> _events = [];
-  bool _busy = true;
+  bool _busy = true, _receiptQr = true;
   String? _error;
   String _query = '';
   @override
@@ -36,10 +37,12 @@ class _ReceiptPageState extends State<ReceiptPage> {
     try {
       final receipts = await widget.store.receipts();
       final events = await widget.store.events();
+      final receiptQr = await receiptQrEnabled(widget.store);
       if (mounted) {
         setState(() {
           _receipts = receipts;
           _events = events;
+          _receiptQr = receiptQr;
         });
       }
     } catch (e) {
@@ -104,6 +107,7 @@ class _ReceiptPageState extends State<ReceiptPage> {
                 title: const Text('PDF teilen'),
                 onTap: () => Navigator.pop(context, 'share'),
               ),
+              const SheetCancelTile(),
             ],
           ),
         ),
@@ -243,7 +247,6 @@ class _ReceiptPageState extends State<ReceiptPage> {
     required bool expanded,
   }) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final history = receiptHistory(receipt, _events);
     final time = localEventTime(receipt.occurredAt).split(' ').last;
     return Card(
@@ -270,32 +273,63 @@ class _ReceiptPageState extends State<ReceiptPage> {
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 8, 12),
         expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final event in history)
-            _position(context, event, cancelled.contains(event.id)),
-          const SizedBox(height: 8),
-          Text(
-            receipt.tenderedKnown
-                ? 'Gegeben ${formatCents(receipt.tenderedCents)} · Rückgeld ${formatCents(receipt.changeCents)}'
-                : 'Bargeldübergabe bestätigt · Betrag nicht erfasst',
-            style: TextStyle(color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: _busy ? null : () => _print(receipt),
-              icon: const Icon(Icons.print_outlined),
-              label: const Text('Bon erneut drucken / teilen'),
+          // The tile stores its expansion under the receipt key; the
+          // selectable texts below store scroll offsets, so they need their own.
+          KeyedSubtree(
+            key: PageStorageKey('${receipt.id}/content'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _receiptDetails(context, receipt, history, cancelled),
             ),
-          ),
-          const SizedBox(height: 6),
-          SelectableText(
-            'Kasse ${receipt.registerNumber} · ${localEventTime(receipt.occurredAt)} · Vorgang ${receipt.id}',
-            style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
           ),
         ],
       ),
     );
+  }
+
+  List<Widget> _receiptDetails(
+    BuildContext context,
+    Receipt receipt,
+    List<SaleEvent> history,
+    Set<String> cancelled,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return [
+      for (final event in history)
+        _position(context, event, cancelled.contains(event.id)),
+      const SizedBox(height: 8),
+      Text(
+        receipt.tenderedKnown
+            ? 'Gegeben ${formatCents(receipt.tenderedCents)} · Rückgeld ${formatCents(receipt.changeCents)}'
+            : 'Bargeldübergabe bestätigt · Betrag nicht erfasst',
+        style: TextStyle(color: scheme.onSurfaceVariant),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => _print(receipt),
+            icon: const Icon(Icons.print_outlined),
+            label: const Text('Bon erneut drucken / teilen'),
+          ),
+          if (_receiptQr)
+            OutlinedButton.icon(
+              onPressed: _busy
+                  ? null
+                  : () => showReceiptQr(context, widget.store, receipt),
+              icon: const Icon(Icons.qr_code_2),
+              label: const Text('QR-Quittung'),
+            ),
+        ],
+      ),
+      const SizedBox(height: 6),
+      SelectableText(
+        'Kasse ${receipt.registerNumber} · ${localEventTime(receipt.occurredAt)} · Vorgang ${receipt.id}',
+        style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+      ),
+    ];
   }
 
   Widget _position(BuildContext context, SaleEvent event, bool isCancelled) {

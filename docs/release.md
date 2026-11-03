@@ -10,9 +10,10 @@ Versionsdateien nicht mit anderem Inhalt überschreiben.
 
 ## CI und herunterladbare Builds
 
-`.github/workflows/flutter.yml` läuft auf Push nach `master`, auf Pull Requests
+`.github/workflows/flutter.yml` läuft auf Push nach `develop` oder `master`, auf Pull Requests
 und manuell. Formatierung, Analyse, Flutter-Tests und Artefaktvertragstests sind
-Voraussetzung für native Builds. `develop` löst keinen Push-Build aus.
+Voraussetzung für native Builds. Der GitHub-Standardbranch ist `develop`, damit
+GitHub den aktuellen Workflow einschließlich manuellem Start findet.
 Manuelle Ausführung auf anderen Branches erlaubt nur Vorbereitung, keine Signierung
 oder Veröffentlichung. Nach erfolgreichem Lauf sind die ZIP-Artefakte im jeweiligen
 GitHub-Actions-Lauf herunterladbar (Aufbewahrung 14 Tage).
@@ -151,7 +152,8 @@ Signierung und App-Store-Connect-Eintrag. Die Pipeline belegt keine Hardwareabna
 Stand 02.10.2026: Google verlangt seit 31.08.2026 für neue Apps und Updates
 Android 16/API 36; der gepinnte Flutter-SDK-Quellstand setzt compileSdk/targetSdk auf 36 (minSdk 24).
 Apple verlangt seit 28.04.2026 Xcode 26+ und iOS-26-SDK für Uploads.
-Das Deployment Target ist davon getrennt (Projekt: iOS 13).
+Das Deployment Target ist davon getrennt: seit KAN-587 mindestens **iOS 14**,
+entsprechend dem bereits verwendeten `file_picker_darwin`-Paket. iOS 13 wird nicht unterstützt.
 
 Quellen: [Flutter Android](https://docs.flutter.dev/deployment/android),
 [Flutter iOS](https://docs.flutter.dev/deployment/ios),

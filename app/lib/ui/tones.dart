@@ -141,6 +141,18 @@ class Tones {
       _light(c) ? const Color(0xff4a2800) : const Color(0xffffdcbe);
 }
 
+/// Last entry of an action sheet: closes it without choosing anything.
+class SheetCancelTile extends StatelessWidget {
+  const SheetCancelTile({super.key});
+  @override
+  Widget build(BuildContext context) => ListTile(
+    key: const Key('sheet-cancel'),
+    leading: const Icon(Icons.close),
+    title: const Text('Abbrechen'),
+    onTap: () => Navigator.pop(context),
+  );
+}
+
 /// Small rounded label, e.g. "Demo" or "V2".
 class Tag extends StatelessWidget {
   final String text;

@@ -46,7 +46,11 @@ void main() {
             ),
           );
           await waitForSettings(tester);
-          await tester.ensureVisible(find.text('Kamera aktivieren'));
+          await tester.scrollUntilVisible(
+            find.text('Kamera aktivieren'),
+            300,
+            scrollable: find.byType(Scrollable).first,
+          );
           await tester.tap(find.text('Kamera aktivieren'));
           await tester.pump();
           expect(await store.setting('uiSettings'), original);

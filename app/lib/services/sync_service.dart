@@ -55,6 +55,9 @@ class SyncService {
     if (organizationId.trim().isEmpty) {
       throw const FormatException('Organisations-ID fehlt.');
     }
+    // /markets also returns 200 for invalid tokens (public list). Validate the
+    // session only during this online action, never while restoring offline.
+    await api.request('GET', '/auth/me');
     final response = await api.request(
       'GET',
       '/markets',
@@ -64,12 +67,22 @@ class SyncService {
     if (body is! Map || body['items'] is! List) {
       throw const FormatException('Ungültige Marktliste.');
     }
-    return (body['items'] as List).map((e) {
-      if (e is! Map || e['id'] is! int || (e['id'] as int) <= 0) {
-        throw const FormatException('Ungültiger Markt in der Liste.');
-      }
-      return Map<String, Object?>.from(e);
-    }).toList();
+    return (body['items'] as List)
+        .map((e) {
+          if (e is! Map || e['id'] is! int || (e['id'] as int) <= 0) {
+            throw const FormatException('Ungültiger Markt in der Liste.');
+          }
+          return Map<String, Object?>.from(e);
+        })
+        .where(_mayRunRegister)
+        .toList();
+  }
+
+  /// Only markets where the account may load the register package (KAN-591).
+  static bool _mayRunRegister(Map<String, Object?> market) {
+    final roles = market['myRoles'];
+    return roles is List &&
+        roles.any((r) => r == 'cashier' || r == 'organizer');
   }
 
   Future<MarketPackage> download(int marketId, {int? registerNumber}) async {
@@ -92,6 +105,12 @@ class SyncService {
         statusCode: 423,
       );
     } on ApiException catch (error) {
+      if (error.statusCode == 403) {
+        throw const ApiException(
+          'Für diesen Markt fehlt die Kassenrolle.',
+          statusCode: 403,
+        );
+      }
       if (error.statusCode == 422) {
         throw const ApiException(
           'Feldprofil ungültig: Pflichtfeld Preis fehlt.',
@@ -102,9 +121,13 @@ class SyncService {
     }
   }
 
+  /// Sales without a backend listing stay local and appear in [conflicts], as in
+  /// the desktop register: the batch contract requires a listing for every item.
   Future<SyncResult> uploadSales({bool retryOnly = false}) async {
     _validateUpload();
-    var events = await store.pendingEvents();
+    var events = (await store.pendingEvents())
+        .where((event) => !event.listing.unexpected)
+        .toList();
     if (retryOnly) {
       final queue = ((await store.setting('syncReuploadQueue')) as List? ?? [])
           .cast<String>()
@@ -131,9 +154,11 @@ class SyncService {
           );
         }
       }
+      // 409 still carries every item's outcome; conflicts go to review, the rest is acknowledged.
       final response = await api.request(
         'POST',
         '/sales/batch',
+        accepted: const {409},
         json: {
           'marketId': int.parse(store.session.marketId),
           'exportGeneration': store.session.exportGeneration,
@@ -173,37 +198,6 @@ class SyncService {
           .where((r) => {'created', 'skipped_duplicate'}.contains(r['result']))
           .length;
       return SyncResult('sales-batch', events.length, acknowledged, results);
-    });
-  }
-
-  Future<SyncResult> uploadListingStatus() async {
-    _validateUpload();
-    final all = await store.events();
-    final effective = _effective(all);
-    final ids = effective
-        .where((e) => !e.listing.unexpected)
-        .map((e) => e.listing.listingId)
-        .toSet();
-    return _run('listing-status', all, () async {
-      if (ids.isEmpty) return const SyncResult('listing-status', 0, 0, []);
-      final response = await api.request(
-        'POST',
-        '/listings/status',
-        json: {
-          'marketId': int.parse(store.session.marketId),
-          'updates': [
-            for (final id in ids.toList()..sort())
-              {'listingId': id, 'fromStatus': 'For Sale', 'toStatus': 'Sold'},
-          ],
-        },
-      );
-      final results = _parseResults(
-        response.body,
-        ['results', 'updates', 'items'],
-        'listingId',
-        ids,
-      );
-      return SyncResult('listing-status', ids.length, 0, results);
     });
   }
 

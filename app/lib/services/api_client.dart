@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'session_store.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -22,13 +23,15 @@ class AccountLockedException extends ApiException {
     : super('Konto oder Markt gesperrt (HTTP 423).', statusCode: 423);
 }
 
-/// Backend token is deliberately held only in memory. There is no refresh API.
+/// There is no refresh API. With a [SessionStore] the token survives restarts
+/// until logout or the first 401 (KAN-592); offline selling never needs it.
 class ApiClient {
   final Uri baseUrl;
   final http.Client _client;
   final Duration timeout;
   final int maxAttempts;
   final Future<void> Function(Duration) _delay;
+  final SessionStore? sessions;
   String? _token;
   ApiClient(
     String base, {
@@ -36,6 +39,7 @@ class ApiClient {
     this.timeout = const Duration(seconds: 30),
     this.maxAttempts = 3,
     Future<void> Function(Duration)? delay,
+    this.sessions,
   }) : baseUrl = _parseBase(base),
        _client = client ?? http.Client(),
        _delay = delay ?? Future<void>.delayed {
@@ -63,10 +67,42 @@ class ApiClient {
     _token = value;
   }
 
+  /// Forgets the token in memory only; a stored session stays for the next start.
   void clearToken() => _token = null;
   void close() {
     clearToken();
     _client.close();
+  }
+
+  /// Resumes a stored session for this API address; true when one was found.
+  Future<bool> restoreSession() async {
+    final stored = await sessions?.read();
+    if (stored == null || stored.baseUrl != '$baseUrl') return false;
+    setToken(stored.token);
+    return true;
+  }
+
+  /// Ends the session on the server when reachable and always on the device.
+  Future<void> logout({bool everywhere = false}) async {
+    try {
+      if (everywhere && _token == null) {
+        throw const AuthenticationRequiredException();
+      }
+      if (_token != null) {
+        await request('POST', everywhere ? '/auth/logout-all' : '/auth/logout');
+      }
+    } on ApiException {
+      if (everywhere) {
+        throw const ApiException(
+          'Auf diesem Gerät abgemeldet. Das Abmelden auf allen Geräten konnte '
+          'nicht bestätigt werden. Bitte erneut anmelden und wiederholen.',
+        );
+      }
+      // Local logout remains possible offline; global success needs a server reply.
+    } finally {
+      clearToken();
+      await sessions?.clear();
+    }
   }
 
   Future<void> login(String email, String password) async {
@@ -74,6 +110,7 @@ class ApiClient {
       throw const ApiException('E-Mail und Passwort dürfen nicht leer sein.');
     }
     clearToken();
+    await sessions?.clear();
     final response = await request(
       'POST',
       '/auth/login',
@@ -91,13 +128,17 @@ class ApiClient {
       throw const ApiException('Login-Antwort enthält kein gültiges Token.');
     }
     setToken(body['token'] as String);
+    await sessions?.write(StoredSession('$baseUrl', _token!));
   }
 
+  /// [accepted] lists non-2xx statuses whose body is a regular result, such as
+  /// the per-item outcome of a batch with conflicts (409).
   Future<http.Response> request(
     String method,
     String path, {
     Object? json,
     Map<String, Object?>? params,
+    Set<int> accepted = const {},
   }) async {
     final uri = Uri.parse(
       '$baseUrl/${path.replaceFirst(RegExp(r"^/+"), "")}',
@@ -132,7 +173,13 @@ class ApiClient {
       if (response != null &&
           (!{500, 502, 503, 504}.contains(response.statusCode) ||
               attempt == maxAttempts - 1)) {
-        _check(response);
+        if (response.statusCode == 401) {
+          // Expired or revoked: the stored session must not be offered again.
+          clearToken();
+          await sessions?.clear();
+          throw const AuthenticationRequiredException();
+        }
+        if (!accepted.contains(response.statusCode)) _check(response);
         return response;
       }
       if (attempt < maxAttempts - 1) {
@@ -145,10 +192,6 @@ class ApiClient {
   void _check(http.Response response) {
     final status = response.statusCode;
     if (status >= 200 && status < 300) return;
-    if (status == 401) {
-      clearToken();
-      throw const AuthenticationRequiredException();
-    }
     Object? body;
     try {
       body = jsonDecode(response.body);

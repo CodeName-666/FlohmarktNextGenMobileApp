@@ -69,20 +69,7 @@ Future<Uint8List> buildReceiptPdf(
   Receipt receipt,
   List<SaleEvent> events,
 ) async {
-  final own = events.where((e) => e.receiptId == receipt.id).toList();
-  // A later cancellation attached to the original receipt is history, not a
-  // mutation of the originally printed purchase. Separate refund receipts do
-  // contain their cancellation position and negative total.
-  final ownIds = own.map((e) => e.id).toSet();
-  final signedTotal = own.fold<int>(
-    0,
-    (sum, e) =>
-        sum +
-        (e.cancelOf == null ? e.listing.priceCents : -e.listing.priceCents),
-  );
-  final original = signedTotal == receipt.totalCents
-      ? own
-      : own.where((e) => !ownIds.contains(e.cancelOf)).toList();
+  final original = receiptPositions(receipt, events);
   final history = receiptHistory(receipt, events);
   final font = pw.Font.ttf(
     await rootBundle.load('assets/fonts/Roboto-Regular.ttf'),
