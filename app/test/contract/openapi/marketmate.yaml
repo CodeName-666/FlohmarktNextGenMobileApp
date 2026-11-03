@@ -4,11 +4,11 @@ info:
 
   title: MarketMate API
 
-  version: 1.7.0
+  version: 2.0.0
 
   description: |
 
-    Public REST API for the MarketMate platform. The specification mirrors the existing Express
+    Public REST API for the MarketMate platform. The specification mirrors the existing FastAPI
 
     backend (`src/backend`) and the shared domain models (`src/frontend/src/lib/types.ts`).
 
@@ -19,6 +19,13 @@ info:
     Use this document as the single source of truth for generating
 
     clients and server stubs.
+
+    Contract 2.0.0 (KAN-587): daily sales summaries are refreshed from the persisted
+    journal of all registers instead of accepting client totals. Refund days may
+    have negative revenue. Upload sales before refreshing summaries. Request fields
+    remain accepted for older clients; the API path remains `/api/v1`.
+    This contract also documents the mobile register export, global logout, market
+    roles and nullable response fields used by the backend.
 
   contact:
 

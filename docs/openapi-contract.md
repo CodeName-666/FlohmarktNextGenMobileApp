@@ -30,6 +30,10 @@ Die Spezifikation liegt als unveränderte Kopie unter
 `app/test/contract/openapi/marketmate.yaml`; `source.json` hält Commit und
 SHA-256 (über LF-Zeilenenden) fest.
 
+Aktueller Vertrag: **2.0.0** (KAN-587). Die Hauptversion kennzeichnet die Umstellung
+der Tagesumsätze auf das Serverjournal und negative Erstattungssummen. Der
+HTTP-Basispfad bleibt `/api/v1`; `openapi: 3.1.0` bezeichnet das Spezifikationsformat.
+
 1. Im Backend-Repository den gewünschten Stand auschecken (in der Regel `develop`).
 2. Testdaten neu erzeugen:
 
