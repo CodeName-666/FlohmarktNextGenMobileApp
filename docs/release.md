@@ -10,9 +10,11 @@ Versionsdateien nicht mit anderem Inhalt überschreiben.
 
 ## CI und herunterladbare Builds
 
-`.github/workflows/flutter.yml` läuft auf Push nach `master`, auf Pull Requests
-und manuell. Formatierung, Analyse, Flutter-Tests und Artefaktvertragstests sind
-Voraussetzung für native Builds. `develop` löst keinen Push-Build aus.
+`.github/workflows/flutter.yml` läuft automatisch bei Push nach `main` und bei
+Pull Requests mit Zielbranch `main`; zusätzlich ist ein manueller Start möglich.
+Formatierung, Analyse, Flutter-Tests und Artefaktvertragstests sind
+Voraussetzung für native Builds. Der GitHub-Standardbranch ist `develop`, damit
+GitHub den aktuellen Workflow einschließlich manuellem Start findet.
 Manuelle Ausführung auf anderen Branches erlaubt nur Vorbereitung, keine Signierung
 oder Veröffentlichung. Nach erfolgreichem Lauf sind die ZIP-Artefakte im jeweiligen
 GitHub-Actions-Lauf herunterladbar (Aufbewahrung 14 Tage).
@@ -20,12 +22,12 @@ GitHub-Actions-Lauf herunterladbar (Aufbewahrung 14 Tage).
 | Artefakt | Verwendung |
 | --- | --- |
 | `MarketMateMobile_<version>+<build>_android-debug.apk` | Installierbarer Testbuild mit temporärem Debug-Schlüssel, kein produktiver Updatekanal |
-| `MarketMateMobile_<version>+<build>_android-unsigned.apk` | Unsig­niertes Release-Ergebnis auf master, nicht installierbar |
+| `MarketMateMobile_<version>+<build>_android-unsigned.apk` | Unsig­niertes Release-Ergebnis auf main, nicht installierbar |
 | `MarketMateMobile_<version>+<build>_android-unsigned.aab` | Play-Vorbereitung ohne Signierung, nicht direkt installierbar |
 | `MarketMateMobile_<version>+<build>.apk` | Optional: mit dauerhaftem App-Schlüssel signierter Direktdownload |
 | `MarketMateMobile_<version>+<build>_android-upload-signed.aab` | Optional: mit getrenntem Play-Upload-Schlüssel signiertes Bundle |
 | `MarketMateMobile_<version>+<build>_ios-simulator.app.tar.gz` | Simulator-App; auf einem passenden Mac-Simulator testen |
-| `MarketMateMobile_<version>+<build>_ios-device-unsigned.app.tar.gz` | Unsig­niertes Geräte-Bundle auf master; kein installierbares IPA |
+| `MarketMateMobile_<version>+<build>_ios-device-unsigned.app.tar.gz` | Unsig­niertes Geräte-Bundle auf main; kein installierbares IPA |
 
 Der iOS-Job läuft auf `macos-15` und wählt ausdrücklich Xcode 26.3; Xcode- und
 iPhoneOS-SDK-Version werden geprüft. Ein Windows-Build ersetzt diese Prüfung nicht.
@@ -42,7 +44,7 @@ Lokal kann die ignorierte `app/android/key.properties` mit `storeFile`,
 `storePassword`, `keyAlias`, `keyPassword` verwendet werden. CI übergibt diese Werte
 als Umgebungsvariablen und schreibt nur den Keystore temporär unter `RUNNER_TEMP`.
 
-GitHub-Environment `mobile-signing` anlegen und auf `master` beschränken.
+GitHub-Environment `mobile-signing` anlegen und auf `main` beschränken.
 Repository-Variable `MOBILE_ANDROID_SIGNING_ENABLED=true` aktiviert den Signierjob.
 `ANDROID_APP_CERT_SHA256` ist eine Variable mit dem erwarteten SHA256-Fingerabdruck
 des dauerhaften App-Zertifikats; sie muss auch im Veröffentlichungsjob verfügbar sein.
@@ -101,9 +103,9 @@ des mobilen Release-Benutzers/Schlüssels und des Dispatchers aus dem Website-Pr
 (`tools/deployment/release-ssh-command.sh`) diese Repository-Variablen setzen:
 
 - `MOBILE_SERVER_CONTRACT_READY=true`: Serverinstallation und Contract geprüft.
-- `MOBILE_SERVER_PUBLISH_ENABLED=true`: automatische Veröffentlichung auf master aktiviert.
+- `MOBILE_SERVER_PUBLISH_ENABLED=true`: automatische Veröffentlichung auf main aktiviert.
 
-Zusätzlich Environment `mobile-release` auf `master` beschränken und nach Bedarf
+Zusätzlich Environment `mobile-release` auf `main` beschränken und nach Bedarf
 mit GitHub-Freigaberegeln schützen. Notwendige Secrets:
 
 | Secret | Bedeutung |
@@ -151,7 +153,8 @@ Signierung und App-Store-Connect-Eintrag. Die Pipeline belegt keine Hardwareabna
 Stand 02.10.2026: Google verlangt seit 31.08.2026 für neue Apps und Updates
 Android 16/API 36; der gepinnte Flutter-SDK-Quellstand setzt compileSdk/targetSdk auf 36 (minSdk 24).
 Apple verlangt seit 28.04.2026 Xcode 26+ und iOS-26-SDK für Uploads.
-Das Deployment Target ist davon getrennt (Projekt: iOS 13).
+Das Deployment Target ist davon getrennt: seit KAN-587 mindestens **iOS 14**,
+entsprechend dem bereits verwendeten `file_picker_darwin`-Paket. iOS 13 wird nicht unterstützt.
 
 Quellen: [Flutter Android](https://docs.flutter.dev/deployment/android),
 [Flutter iOS](https://docs.flutter.dev/deployment/ios),

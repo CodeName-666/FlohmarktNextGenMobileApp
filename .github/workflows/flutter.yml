@@ -2,8 +2,9 @@ name: Mobile checks and release preparation
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -58,7 +59,7 @@ jobs:
         run: flutter build apk --debug
       - run: python3 ../scripts/collect_artifacts.py android debug-apk
       - name: Build unsigned release APK and Play bundle preparation
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         run: |
           flutter build apk --release
           python3 ../scripts/collect_artifacts.py android unsigned-apk
@@ -92,7 +93,7 @@ jobs:
       - run: flutter build ios --simulator --debug
       - run: python3 ../scripts/collect_artifacts.py ios simulator
       - name: Build unsigned device application
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         run: |
           flutter build ios --release --no-codesign
           python3 ../scripts/collect_artifacts.py ios unsigned-device
@@ -104,7 +105,7 @@ jobs:
           retention-days: 14
 
   signed-android:
-    if: github.ref == 'refs/heads/master' && vars.MOBILE_ANDROID_SIGNING_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main' && vars.MOBILE_ANDROID_SIGNING_ENABLED == 'true'
     needs: [checks, android]
     runs-on: ubuntu-latest
     environment: mobile-signing
@@ -168,7 +169,7 @@ jobs:
         run: rm -f "$RUNNER_TEMP/marketmate-signing.jks"
 
   publish-android:
-    if: github.ref == 'refs/heads/master' && vars.MOBILE_SERVER_PUBLISH_ENABLED == 'true' && vars.MOBILE_SERVER_CONTRACT_READY == 'true'
+    if: github.ref == 'refs/heads/main' && vars.MOBILE_SERVER_PUBLISH_ENABLED == 'true' && vars.MOBILE_SERVER_CONTRACT_READY == 'true'
     needs: [signed-android, ios]
     runs-on: ubuntu-latest
     environment: mobile-release

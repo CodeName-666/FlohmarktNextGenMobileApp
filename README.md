@@ -112,7 +112,7 @@ app/                  Flutter-Projekt (pubspec, lib, test, assets)
 build/android/        Gesammelte APK/AAB und Prüfsummen (ignoriert)
 build/ios/            Gesammelte iOS-Kompilierartefakte (ignoriert)
 scripts/              Entwicklung und Artefaktverarbeitung
-.github/workflows/    Prüfungen und Master-Builds
+.github/workflows/    Prüfungen und Main-Builds
 docs/                 Bedienung, Featurematrix, Abnahme und Release-Anleitung
 ```
 
@@ -122,7 +122,8 @@ Die Artefaktskripte verwenden Python 3.11 oder neuer (lokal vorhanden: Python 3.
 Native Quellordner bleiben innerhalb des Flutter-Projekts. SDKs, Signaturschlüssel,
 Buildausgaben und lokale Datenbanken gehören nicht in Git.
 
-Die Pipeline baut bei Push auf `master`. Ohne eingerichtete Release-Signierung
+Die Pipeline baut bei Push nach `main` und bei Pull Requests mit Ziel `main`.
+Ohne eingerichtete Release-Signierung
 liefert sie ausdrücklich gekennzeichnete Prüfartefakte. Eine signierte Android-APK
 und die spätere AAB/Store-Verteilung sind in [Release und Bereitstellung](docs/release.md)
 beschrieben; iOS benötigt macOS/Xcode sowie für eine verteilbare IPA Apple-Signing.
