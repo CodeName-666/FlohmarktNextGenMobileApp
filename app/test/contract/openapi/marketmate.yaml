@@ -2093,6 +2093,80 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /markets/{marketId}/table-settlement:
+    get:
+      summary: Settle the table rent of one table market for the organizer
+      description: One row per booking plus totals over the filtered rows. Covers table rent and equipment only.
+      operationId: getTableMarketSettlement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/MarketId'
+        - $ref: '#/components/parameters/TableSettlementPaymentStatus'
+        - $ref: '#/components/parameters/TableSettlementBookingStatus'
+      responses:
+        '200':
+          description: Settlement rows and totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableMarketSettlement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /markets/{marketId}/table-settlement/export.csv:
+    get:
+      summary: Download the table-market settlement as CSV
+      operationId: exportTableMarketSettlementCsv
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/MarketId'
+        - $ref: '#/components/parameters/TableSettlementPaymentStatus'
+        - $ref: '#/components/parameters/TableSettlementBookingStatus'
+      responses:
+        '200':
+          description: UTF-8 CSV settlement with the same rows and totals as the view
+          content:
+            text/csv:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /markets/{marketId}/table-settlement/export.pdf:
+    get:
+      summary: Download the table-market settlement as PDF
+      operationId: exportTableMarketSettlementPdf
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/MarketId'
+        - $ref: '#/components/parameters/TableSettlementPaymentStatus'
+        - $ref: '#/components/parameters/TableSettlementBookingStatus'
+      responses:
+        '200':
+          description: PDF settlement with the same rows and totals as the view
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /markets/{marketId}/table-configuration:
     get:
       summary: Load the organizer-managed table-market configuration
@@ -7451,6 +7525,21 @@ components:
 
   parameters:
 
+    TableSettlementPaymentStatus:
+      name: paymentStatus
+      in: query
+      required: false
+      description: Only list bookings with this payment status.
+      schema:
+        $ref: '#/components/schemas/TableBookingPaymentStatus'
+    TableSettlementBookingStatus:
+      name: status
+      in: query
+      required: false
+      description: Only list bookings with this booking status.
+      schema:
+        $ref: '#/components/schemas/TableBookingStatus'
+
     MarketId:
 
       name: marketId
@@ -10343,6 +10432,11 @@ components:
       type: string
       enum: [unknown, checked_in, no_show]
 
+    TableCancellationPolicy:
+      type: string
+      enum: [full_refund, retain, fee]
+      description: How the paid amount of a cancelled table booking is split between refund and organizer.
+
     TableBookingCancelRequest:
       type: object
       properties:
@@ -10350,6 +10444,10 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+        fullRefund:
+          type: boolean
+          default: false
+          description: Organizer-only override that refunds the full paid amount instead of applying the market policy.
       required: [reason]
 
     TableBookingCheckInRequest:
@@ -10533,6 +10631,19 @@ components:
         bookedAt:
           type: string
           format: date-time
+        cancellationPolicy:
+          allOf:
+            - $ref: '#/components/schemas/TableCancellationPolicy'
+          nullable: true
+          description: Policy applied when the booking was cancelled; null for standing bookings and older cancellations.
+        cancellationRetainedCents:
+          type: integer
+          minimum: 0
+          nullable: true
+        cancellationRefundCents:
+          type: integer
+          minimum: 0
+          nullable: true
       required: [id, marketId, sellerUserId, status, tableId, tableLabel, tableTypeId, tableTypeName, tablePriceCents, equipment, equipmentSubtotalCents, totalPriceCents, paymentStatus, checkInStatus, bookedAt]
 
     TableBookingList:
@@ -10543,6 +10654,127 @@ components:
           items:
             $ref: '#/components/schemas/TableBooking'
       required: [items]
+
+    TableSettlementRow:
+      type: object
+      properties:
+        bookingId:
+          type: string
+        tableLabel:
+          type: string
+        tableTypeName:
+          type: string
+        sellerName:
+          type: string
+          nullable: true
+        sellerEmail:
+          type: string
+          nullable: true
+        tablePriceCents:
+          type: integer
+          minimum: 0
+        equipmentSubtotalCents:
+          type: integer
+          minimum: 0
+        totalPriceCents:
+          type: integer
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/TableBookingStatus'
+        paymentStatus:
+          $ref: '#/components/schemas/TableBookingPaymentStatus'
+        paymentMethod:
+          type: string
+          nullable: true
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancellationPolicy:
+          allOf:
+            - $ref: '#/components/schemas/TableCancellationPolicy'
+          nullable: true
+        cancellationRetainedCents:
+          type: integer
+          minimum: 0
+          nullable: true
+        cancellationRefundCents:
+          type: integer
+          minimum: 0
+          nullable: true
+        refundDueCents:
+          type: integer
+          minimum: 0
+          description: Refund still owed to the seller (cancelled, refund amount recorded, payment status still paid).
+      required: [bookingId, tableLabel, tableTypeName, tablePriceCents, equipmentSubtotalCents, totalPriceCents, status, paymentStatus, refundDueCents]
+
+    TableSettlementTotals:
+      type: object
+      description: Totals over the listed rows; every amount is the sum of the matching row amounts.
+      properties:
+        bookingCount:
+          type: integer
+          minimum: 0
+        activeBookingCount:
+          type: integer
+          minimum: 0
+        cancelledBookingCount:
+          type: integer
+          minimum: 0
+        claimedCents:
+          type: integer
+          minimum: 0
+          description: Total price of confirmed and completed bookings.
+        paidCents:
+          type: integer
+          minimum: 0
+          description: Total price of active bookings marked paid.
+        openCents:
+          type: integer
+          minimum: 0
+          description: Total price of active bookings still unpaid.
+        waivedCents:
+          type: integer
+          minimum: 0
+          description: Total price of active bookings whose payment was waived.
+        refundedCents:
+          type: integer
+          minimum: 0
+          description: Amount already paid back (payment status refunded).
+        retainedCents:
+          type: integer
+          minimum: 0
+          description: Amount kept from cancelled bookings under the applied policy.
+        refundDueCents:
+          type: integer
+          minimum: 0
+          description: Refunds still owed because the payment status is still paid.
+      required: [bookingCount, activeBookingCount, cancelledBookingCount, claimedCents, paidCents, openCents, waivedCents, refundedCents, retainedCents, refundDueCents]
+
+    TableMarketSettlement:
+      type: object
+      properties:
+        marketId:
+          type: integer
+        marketName:
+          type: string
+        paymentStatus:
+          allOf:
+            - $ref: '#/components/schemas/TableBookingPaymentStatus'
+          nullable: true
+          description: Applied payment-status filter; null lists every payment status.
+        status:
+          allOf:
+            - $ref: '#/components/schemas/TableBookingStatus'
+          nullable: true
+          description: Applied booking-status filter; null lists every booking status.
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/TableSettlementRow'
+        totals:
+          $ref: '#/components/schemas/TableSettlementTotals'
+      required: [marketId, marketName, rows, totals]
 
     TableBookingCheckInItem:
       type: object
@@ -10689,6 +10921,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TableUnit'
+        cancellationPolicy:
+          allOf:
+            - $ref: '#/components/schemas/TableCancellationPolicy'
+          default: full_refund
+        cancellationFeeCents:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Fixed fee kept on cancellation; required for the `fee` policy.
       required: [bookingOpensAt, bookingClosesAt, sellerCancellationDeadline, maxBookingsPerSeller, currency, tableTypes, equipmentTypes, tables]
 
     TableMarketConfiguration:
@@ -10723,7 +10964,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TableUnit'
-      required: [marketId, bookingOpensAt, bookingClosesAt, sellerCancellationDeadline, maxBookingsPerSeller, currency, tableTypes, equipmentTypes, tables]
+        cancellationPolicy:
+          $ref: '#/components/schemas/TableCancellationPolicy'
+        cancellationFeeCents:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Fixed fee kept on cancellation; set only for the `fee` policy.
+      required: [marketId, bookingOpensAt, bookingClosesAt, sellerCancellationDeadline, maxBookingsPerSeller, currency, tableTypes, equipmentTypes, tables, cancellationPolicy]
 
     PublicTableTypeAvailability:
       type: object
@@ -10826,7 +11074,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PublicTableUnitAvailability'
-      required: [bookingOpensAt, bookingClosesAt, sellerCancellationDeadline, maxBookingsPerSeller, currency, totalTables, availableTables, tableTypes, equipmentTypes, tables]
+        cancellationPolicy:
+          $ref: '#/components/schemas/TableCancellationPolicy'
+        cancellationFeeCents:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Fixed fee kept on cancellation; set only for the `fee` policy.
+      required: [bookingOpensAt, bookingClosesAt, sellerCancellationDeadline, maxBookingsPerSeller, currency, totalTables, availableTables, tableTypes, equipmentTypes, tables, cancellationPolicy]
 
     MarketReadiness:
 
