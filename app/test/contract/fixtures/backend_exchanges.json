@@ -14,7 +14,7 @@
         "bundeslandNr": null,
         "email": "mobile.cashier@example.com",
         "emailVerified": false,
-        "id": "user-b092124f465db23f",
+        "id": "user-253f44b1a6b1c712",
         "landkreisNr": null,
         "name": "Kasse Mobil",
         "organizationId": null,
@@ -146,7 +146,7 @@
           "freezeError": null,
           "freezeGeneration": 1,
           "freezeState": "frozen",
-          "frozenAt": "2026-11-03T21:48:53.026712+00:00",
+          "frozenAt": "2026-11-03T22:37:25.990094+00:00",
           "galleryImages": [],
           "hallPlanImageUrl": null,
           "hallPlanUrl": null,
@@ -192,11 +192,11 @@
           "slug": "mobile-vertragsmarkt",
           "startAt": null,
           "startError": null,
-          "startedAt": "2026-11-03T21:48:53.256941+00:00",
+          "startedAt": "2026-11-03T22:37:26.116680+00:00",
           "status": "Active",
           "teardownInfo": null,
           "zonenPlan": {
-            "generatedAt": "2026-11-03T21:48:53.040273+00:00",
+            "generatedAt": "2026-11-03T22:37:25.997153+00:00",
             "lines": [
               {
                 "lineNumber": 1,
@@ -235,7 +235,7 @@
     "response": {
       "articles": [
         {
-          "articleId": "06aea56c-29ea-7fc1-8000-d091a24aa87b",
+          "articleId": "06aea622-4e51-7676-8000-c20215a5604d",
           "articleNr": 1,
           "codeFull": "091200100100011",
           "fields": {
@@ -244,10 +244,10 @@
             "size": "M"
           },
           "labelRevision": 1,
-          "userId": "user-f7f76526de67aedb"
+          "userId": "user-93c2c1e0f0a2c443"
         },
         {
-          "articleId": "06aea56c-2b80-7ef2-8000-01ea6b372432",
+          "articleId": "06aea622-4f43-75ef-8000-fb70eede5b9c",
           "articleNr": 2,
           "codeFull": "091200100100029",
           "fields": {
@@ -256,11 +256,11 @@
             "size": "M"
           },
           "labelRevision": 1,
-          "userId": "user-f7f76526de67aedb"
+          "userId": "user-93c2c1e0f0a2c443"
         }
       ],
-      "checksum": "sha256:7161ed4045bdb8b489ee4a4736db71d952125cc0466a99c0bd615c72015acca8",
-      "export_timestamp": "2026-11-03T21:48:53Z",
+      "checksum": "sha256:bc80667572061eaab41f275b5ef7c8b64eee7dcb5e73bf1a0f3812b6c276e0e5",
+      "export_timestamp": "2026-11-03T22:37:25Z",
       "fees": {
         "revenueSharePercent": null,
         "sellerFeeFlat": null,
@@ -298,10 +298,10 @@
       "listings": [
         {
           "acceptedLabelRevision": 1,
-          "articleId": "06aea56c-29ea-7fc1-8000-d091a24aa87b",
+          "articleId": "06aea622-4e51-7676-8000-c20215a5604d",
           "exportGeneration": 1,
           "freezeGeneration": 1,
-          "listingId": "1-06aea56c-29ea-7fc1-8000-d091a24aa87b",
+          "listingId": "1-06aea622-4e51-7676-8000-c20215a5604d",
           "marketId": 1,
           "priceSnapshot": 1.5,
           "priceSnapshotCents": 150,
@@ -310,10 +310,10 @@
         },
         {
           "acceptedLabelRevision": 1,
-          "articleId": "06aea56c-2b80-7ef2-8000-01ea6b372432",
+          "articleId": "06aea622-4f43-75ef-8000-fb70eede5b9c",
           "exportGeneration": 1,
           "freezeGeneration": 1,
-          "listingId": "1-06aea56c-2b80-7ef2-8000-01ea6b372432",
+          "listingId": "1-06aea622-4f43-75ef-8000-fb70eede5b9c",
           "marketId": 1,
           "priceSnapshot": 2.5,
           "priceSnapshotCents": 250,
@@ -328,7 +328,7 @@
         "fieldProfileVersion": 1,
         "freezeGeneration": 1,
         "freezeState": "frozen",
-        "frozenAt": "2026-11-03T21:48:53Z",
+        "frozenAt": "2026-11-03T22:37:25Z",
         "id": 1,
         "name": "Mobile Vertragsmarkt"
       },
@@ -350,17 +350,17 @@
             "shardNr": 1
           },
           "sellerNumber": 1,
-          "userId": "user-f7f76526de67aedb"
+          "userId": "user-93c2c1e0f0a2c443"
         }
       ],
       "stammnummernMapping": [
         {
           "articleIds": [
-            "06aea56c-29ea-7fc1-8000-d091a24aa87b",
-            "06aea56c-2b80-7ef2-8000-01ea6b372432"
+            "06aea622-4e51-7676-8000-c20215a5604d",
+            "06aea622-4f43-75ef-8000-fb70eede5b9c"
           ],
           "stammnummer": 1,
-          "userId": "user-f7f76526de67aedb"
+          "userId": "user-93c2c1e0f0a2c443"
         }
       ],
       "version": "2.0"
@@ -413,7 +413,7 @@
           "items": [
             {
               "labelRevision": 1,
-              "listingId": "1-06aea56c-29ea-7fc1-8000-d091a24aa87b",
+              "listingId": "1-06aea622-4e51-7676-8000-c20215a5604d",
               "priceSnapshot": 1.5,
               "priceSnapshotCents": 150
             }
@@ -454,7 +454,7 @@
           "items": [
             {
               "labelRevision": 1,
-              "listingId": "1-06aea56c-29ea-7fc1-8000-d091a24aa87b",
+              "listingId": "1-06aea622-4e51-7676-8000-c20215a5604d",
               "priceSnapshot": 1.5,
               "priceSnapshotCents": 150
             }
@@ -495,7 +495,7 @@
           "items": [
             {
               "labelRevision": 1,
-              "listingId": "1-06aea56c-29ea-7fc1-8000-d091a24aa87b",
+              "listingId": "1-06aea622-4e51-7676-8000-c20215a5604d",
               "priceSnapshot": 1.5,
               "priceSnapshotCents": 150
             }
@@ -513,7 +513,7 @@
           "currentWinnerOccurredAt": "2099-09-25T09:15:00+00:00",
           "currentWinnerVorgangId": "019a0f00-0000-7000-8000-000000000001",
           "errorCode": null,
-          "message": "Listing already sold by an earlier vorgang: 1-06aea56c-29ea-7fc1-8000-d091a24aa87b (winner 019a0f00-0000-7000-8000-000000000001 at 2099-09-25T09:15:00+00:00)",
+          "message": "Listing already sold by an earlier vorgang: 1-06aea622-4e51-7676-8000-c20215a5604d (winner 019a0f00-0000-7000-8000-000000000001 at 2099-09-25T09:15:00+00:00)",
           "result": "conflict",
           "vorgangId": "019a0f00-0000-7000-8000-000000000002"
         }
@@ -532,7 +532,7 @@
       "updates": [
         {
           "fromStatus": "For Sale",
-          "listingId": "1-06aea56c-29ea-7fc1-8000-d091a24aa87b",
+          "listingId": "1-06aea622-4e51-7676-8000-c20215a5604d",
           "toStatus": "Sold"
         }
       ]
@@ -559,8 +559,8 @@
       "marketDay": "2099-09-25",
       "marketId": 1,
       "salesCount": 1,
-      "submittedAt": "2026-11-03T21:48:57.798565+00:00",
-      "submittedBy": "user-b092124f465db23f",
+      "submittedAt": "2026-11-03T22:37:27.963778+00:00",
+      "submittedBy": "user-253f44b1a6b1c712",
       "totalRevenueCents": 150
     },
     "status": 201
@@ -581,8 +581,8 @@
       "marketDay": "2099-09-25",
       "marketId": 1,
       "salesCount": 1,
-      "submittedAt": "2026-11-03T21:48:57.849342+00:00",
-      "submittedBy": "user-b092124f465db23f",
+      "submittedAt": "2026-11-03T22:37:27.988467+00:00",
+      "submittedBy": "user-253f44b1a6b1c712",
       "totalRevenueCents": 150
     },
     "status": 200
@@ -594,7 +594,7 @@
     "query": {},
     "request": {
       "conflictType": "doppelverkauf",
-      "listingId": "1-06aea56c-29ea-7fc1-8000-d091a24aa87b",
+      "listingId": "1-06aea622-4e51-7676-8000-c20215a5604d",
       "raisedByKasseNummer": 2,
       "vorgangIdA": "019a0f00-0000-7000-8000-000000000002",
       "vorgangIdB": null
@@ -603,9 +603,9 @@
       "conflictType": "doppelverkauf",
       "details": null,
       "id": 2,
-      "listingId": "1-06aea56c-29ea-7fc1-8000-d091a24aa87b",
+      "listingId": "1-06aea622-4e51-7676-8000-c20215a5604d",
       "marketId": 1,
-      "raisedAt": "2026-11-03T21:48:57.909278+00:00",
+      "raisedAt": "2026-11-03T22:37:28.017999+00:00",
       "raisedByKasseNummer": 2,
       "resolutionNote": null,
       "resolvedAt": null,
